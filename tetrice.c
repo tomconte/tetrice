@@ -134,60 +134,8 @@ uint8_t wait(uint8_t seconds)
 }
 
 /************************************************************/
-/* Proto loop                                                */
+/* Pieces                                                   */
 /************************************************************/
-
-void protoloop()
-{
-    unsigned char x, y;
-    unsigned char i, j, k;
-    char c;
-    tetromino *piece;
-    char cur_shape[] = {0, 0, 0, 0, 0, 0, 0};
-
-    // Print pieces with all shapes
-    j = 0;
-    while (1)
-    {
-        for (y = 1; y < 6; y++)
-        {
-            prints(0, y, "                                        ");
-        }
-        y = 2;
-        x = 0;
-        for (i = 0; i < 7; i++)
-        {
-            piece = tetrominos[i][cur_shape[i]];
-            color(tetrominos_colors[i], black);
-            // Display the 4 blocks
-            for (k = 0; k < 4; k++)
-            {
-                printc(x + (*piece)[k][0], y + (*piece)[k][1], '\x7F');
-            }
-            // Next column
-            x += 5;
-            // If over, next line
-            if (x > 39)
-            {
-                x = 0;
-                y += 5;
-            }
-            // Increment shape index
-            for (j = 0; j < 7; j++)
-            {
-                ++cur_shape[j];
-                if (cur_shape[j] == tetrominos_nb_shapes[j])
-                {
-                    cur_shape[j] = 0;
-                }
-            }
-        }
-        // Wait for a key
-        c = wait(1);
-        if (c == 'X')
-            return;
-    }
-}
 
 // Display a piece
 void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
@@ -210,6 +158,44 @@ void erase_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned
     for (i = 0; i < 4; i++)
     {
         printc(x + (*tetromino)[i][0], y + (*tetromino)[i][1], ' ');
+    }
+}
+
+/************************************************************/
+/* Proto loop                                                */
+/************************************************************/
+
+void protoloop()
+{
+    unsigned char x, y;
+    unsigned char i;
+    char c;
+    char cur_shape[] = {0, 0, 0, 0, 0, 0, 0};
+
+    // Print pieces with all shapes
+    y = 2;
+    x = 0;
+    while (1)
+    {
+        for (i = 0; i < 7; i++)
+        {
+            display_piece(i, x+i*5, y, cur_shape[i]);
+        }
+        // Wait for a key
+        c = wait(1);
+        if (c == 'X')
+            return;
+        // Erase pieces
+        for (i = 0; i < 7; i++)
+        {
+            erase_piece(i, x+i*5, y, cur_shape[i]);
+            // Increment shape index
+            ++cur_shape[i];
+            if (cur_shape[i] == tetrominos_nb_shapes[i])
+            {
+                cur_shape[i] = 0;
+            }
+        }
     }
 }
 
