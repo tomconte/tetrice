@@ -137,6 +137,25 @@ void sleep(uint8_t seconds)
     }
 }
 
+// Sleep for a number of ticks
+void ticks(uint8_t ticks)
+{
+    uint8_t clock;
+    uint8_t tick = 0;
+
+    while (1)
+    {
+        clock = PEEK(0x0008); // control register
+        // wait for clock bit 5 to be set
+        if (clock & 0x20)
+        {
+            tick++;
+            if (tick == ticks)
+                break;
+        }
+    }
+}
+
 // Wait for key or timeout
 uint8_t wait(uint8_t seconds)
 {
@@ -256,6 +275,8 @@ void gameloop()
         display_piece(piece, x, y, rotation);
         // Wait for a key
         c = wait(1);
+        if (c != 0)
+            ticks(5);
         // Erase piece
         erase_piece(piece, x, y, rotation);
         // Move piece
@@ -315,6 +336,6 @@ void main()
     prints(7, 0, "Tetris + Alice = TETRICE");
 
     // Call proto loop
-    // gameloop();
-    protoloop();
+    gameloop();
+    // protoloop();
 }
