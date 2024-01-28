@@ -80,6 +80,43 @@ void printc(unsigned char x, unsigned char y, unsigned char c)
 /* Keyboard and clock                                       */
 /************************************************************/
 
+// Scan the keyboard and return the key pressed, or 0 if no key is pressed.
+uint8_t scankey()
+{
+    uint8_t key;
+    uint8_t col;
+    uint8_t rank;
+
+    for (col = 0; col < 8; col++)
+    {
+        // Column to scan
+        POKE(0x0002, all_key_columns[col]);
+        // Get the result (row)
+        key = PEEK(0xBFFF);
+
+        // Nothing pressed, go to next column
+        if (key == 0xFF)
+            continue;
+
+        // Invert the bits
+        key = ~key;
+
+        // Find the rank of the "on" bit
+        rank = 0;
+        while ((key & 0x01) == 0)
+        {
+            key = key >> 1;
+            rank++;
+        }
+
+        // Return the key
+        return keys_per_column[col][rank];
+    }
+
+    // No key found
+    return 0;
+}
+
 // Sleep for a number of seconds
 void sleep(uint8_t seconds)
 {
@@ -119,17 +156,12 @@ uint8_t wait(uint8_t seconds)
             tick++;
             // 15 ticks == 1 second
             if (tick == 15 * seconds)
-            {
-                tick = 0;
                 return 0;
-            }
         }
         // scan the keyboard
-        POKE(0x0002, 0xBF); // scan keyboard column 6
-        c = PEEK(0xBFFF);   // read column
-        c = ~c; // invert bits
-        if (c == 0x08) // bit 3 = enter key
-            return 'X';
+        c = scankey();
+        if (c != 0)
+            return c;
     }
 }
 
@@ -179,7 +211,7 @@ void protoloop()
     {
         for (i = 0; i < 7; i++)
         {
-            display_piece(i, x+i*5, y, cur_shape[i]);
+            display_piece(i, x + i * 5, y, cur_shape[i]);
         }
         // Wait for a key
         c = wait(1);
@@ -188,7 +220,7 @@ void protoloop()
         // Erase pieces
         for (i = 0; i < 7; i++)
         {
-            erase_piece(i, x+i*5, y, cur_shape[i]);
+            erase_piece(i, x + i * 5, y, cur_shape[i]);
             // Increment shape index
             ++cur_shape[i];
             if (cur_shape[i] == tetrominos_nb_shapes[i])
@@ -226,7 +258,7 @@ void gameloop()
         // Display piece
         display_piece(piece, x, y, rotation);
         // Wait for a key
-        c = getchar();
+        c = wait(1);
         // Erase piece
         erase_piece(piece, x, y, rotation);
         // Move piece
@@ -286,6 +318,6 @@ void main()
     prints(7, 0, "Tetris + Alice = TETRICE");
 
     // Call proto loop
-    //gameloop();
+    // gameloop();
     protoloop();
 }

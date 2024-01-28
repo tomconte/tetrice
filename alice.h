@@ -26,3 +26,21 @@
 #define yellow 11
 #define lmagenta 13
 #define white 15
+
+// This is the key matrix, based on the table in "Les Astuces d'Alice" p. 18.
+// The table below is organized by columns, and each column is a list of keys.
+// The first 7 elements of each row are the keys, the last one is a 0 sentinel.
+// NB: the position for the 'X' is wrong in the book, it's fixed here.
+uint8_t keys_per_column[8][8] = {
+    {'@', 'H', 'P', 'X', '0', '8', ' ' /*(control)*/, 0},
+    {'Q', 'I', 'A', 'Y', '1', '9', '_', 0},
+    {'B', 'J', 'R', 'W', '2', ':', ' ' /*(break)*/, 0},
+    {'C', 'K', 'S', '_', '3', 'M', ' ' /*(left)*/, 0},
+    {'D', 'L', 'T', '_', '4', ',', ' ' /*(right)*/, 0},
+    {'E', '/', 'U', '_', '5', '-', ' ' /*(down)*/, 0},
+    {'F', 'N', 'V', ' ' /*(enter)*/, '6', '.', ' ' /*(up)*/, 0},
+    {'G', 'O', 'Z', ' ', '7', '+', ' ' /*(shift)*/, 0},
+};
+
+// This is the list of columns to scan, in order.
+uint8_t all_key_columns[] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
