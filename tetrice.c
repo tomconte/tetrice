@@ -132,10 +132,7 @@ void sleep(uint8_t seconds)
             tick++;
             // 15 ticks == 1 second
             if (tick == 15 * seconds)
-            {
-                tick = 0;
                 break;
-            }
         }
     }
 }
