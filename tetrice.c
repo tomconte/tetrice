@@ -156,8 +156,14 @@ void ticks(uint8_t ticks)
     }
 }
 
-// Wait for key or timeout
-uint8_t wait(uint8_t seconds)
+// Wait for key or timeout in ticks
+// Remember: 15 ticks == 1 second
+
+// Global variable to store the timeout in ticks
+// this needs to be set before calling wait()
+uint8_t timeout_ticks = 0;
+
+uint8_t wait()
 {
     uint8_t clock;
     uint8_t tick = 0;
@@ -170,14 +176,19 @@ uint8_t wait(uint8_t seconds)
         if (clock & 0x20)
         {
             tick++;
-            // 15 ticks == 1 second
-            if (tick == 15 * seconds)
+            // if timeout is reached, return 0
+            if (tick >= timeout_ticks)
                 return 0;
         }
         // scan the keyboard
         c = scankey();
         if (c != 0)
+        {
+            // if a key is pressed, decrement the timeout
+            timeout_ticks -= tick;
+            // and return the key
             return c;
+        }
     }
 }
 
@@ -230,7 +241,8 @@ void protoloop()
             display_piece(i, x + i * 5, y, cur_shape[i]);
         }
         // Wait for a key
-        c = wait(1);
+        timeout_ticks = 15;
+        c = wait();
         if (c == 'X')
             return;
         // Erase pieces
@@ -251,62 +263,100 @@ void protoloop()
 /* Game loop                                                */
 /************************************************************/
 
+#define START_X 15
+#define START_Y 3
+#define BOUNDS_X1 15
+#define BOUNDS_X2 25
+
 void gameloop()
 {
     // Select a random piece
     // 0x0009-0x000A contains the clock value in μs
     unsigned char piece = PEEK(0x000A) % 7;
     // Set start position to 0,0
-    unsigned char x = 0;
-    unsigned char y = 0;
+    unsigned char x = START_X;
+    unsigned char y = START_Y;
     // Set start rotation to 0
     unsigned char rotation = 0;
-    // Set start speed to 1
-    unsigned char speed = 1;
+    // Previous values
+    unsigned char px = START_X, py = START_Y, protation = 0;
+    // Set start speed
+    unsigned char speed = 20;
     // Set start score to 0
     unsigned char score = 0;
     // Input key
     unsigned char c;
 
+    // Set initial timer
+    timeout_ticks = speed;
+
     // Loop until game over
     while (1)
     {
+        // Erase piece
+        erase_piece(piece, px, py, protation);
+
         // Display piece
         display_piece(piece, x, y, rotation);
+
+        // Keep previous position
+        px = x;
+        py = y;
+        protation = rotation;
+
         // Wait for a key
-        c = wait(1);
-        if (c != 0)
-            ticks(5);
-        // Erase piece
-        erase_piece(piece, x, y, rotation);
+        c = wait();
+
+        // Piece falls
+        if (c == 0 || c == ' ')
+        {
+            y++;
+            timeout_ticks = speed;
+        }
+        else
+        {
+            // anti-bounce
+            ticks(2);
+        }
+
+        // Piece has reached the bottom
+        if (y > 20)
+        {
+            // Reset position
+            x = START_X;
+            y = START_Y;
+            rotation = 0;
+            px = x;
+            py = y;
+            protation = rotation;
+            // Select a random piece
+            piece = PEEK(0x000A) % 7;
+            // Set initial timer
+            timeout_ticks = speed;
+            // Continue loop
+            continue;
+        }
+
         // Move piece
         switch (c)
         {
         case 'X':
             return;
-        case 'L':
-            if (x > 0)
+        case 'O':
+            if (x > BOUNDS_X1)
                 x--;
             break;
-        case 'R':
-            if (x < 9)
+        case 'P':
+            if (x < BOUNDS_X2)
                 x++;
             break;
-        case 'D':
-            if (y < 19)
-                y++;
-            break;
-        case 'U':
-            if (y > 0)
-                y--;
-            break;
-        case 'A':
+        case 'Z':
             if (rotation < tetrominos_nb_shapes[piece] - 1)
                 rotation++;
             else
                 rotation = 0;
             break;
-        case 'B':
+        case 'A':
             if (rotation > 0)
                 rotation--;
             else
