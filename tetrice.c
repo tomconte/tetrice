@@ -109,6 +109,10 @@ uint8_t scankey()
             rank++;
         }
 
+        // Not a valid key, go to next column
+        if (rank > 5)
+            continue;
+
         // Return the key
         return keys_per_column[col][rank];
     }
@@ -125,7 +129,9 @@ void sleep(uint8_t seconds)
 
     while (1)
     {
-        clock = PEEK(0x0008); // control register
+        clock = PEEK(0x0008); // clock control register
+        PEEK(0x0009); // need to read 0x09/0x0A to reset the TOF control bit
+
         // wait for clock bit 5 to be set
         if (clock & 0x20)
         {
@@ -145,7 +151,9 @@ void ticks(uint8_t ticks)
 
     while (1)
     {
-        clock = PEEK(0x0008); // control register
+        clock = PEEK(0x0008); // clock control register
+        PEEK(0x0009); // need to read 0x09/0x0A to reset the TOF control bit
+
         // wait for clock bit 5 to be set
         if (clock & 0x20)
         {
@@ -171,7 +179,9 @@ uint8_t wait()
 
     while (1)
     {
-        clock = PEEK(0x0008); // control register
+        clock = PEEK(0x0008); // clock control register
+        PEEK(0x0009); // need to read 0x09 to reset the TOF control bit
+
         // wait for clock bit 5 to be set
         if (clock & 0x20)
         {
@@ -180,6 +190,7 @@ uint8_t wait()
             if (tick >= timeout_ticks)
                 return 0;
         }
+
         // scan the keyboard
         c = scankey();
         if (c != 0)
