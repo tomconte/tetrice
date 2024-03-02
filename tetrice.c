@@ -358,7 +358,7 @@ void gameloop()
                 x--;
             break;
         case 'P':
-            if (x < BOUNDS_X2)
+            if (x+tetrominos_widths[piece][rotation] <= BOUNDS_X2)
                 x++;
             break;
         case 'Z':
@@ -393,10 +393,18 @@ void main()
     }
 
     // Print message
-    color(yellow, black);
+    color(white, black);
     prints(7, 0, "Tetris + Alice = TETRICE");
 
-    // Call proto loop
+    // Draw background
+    color(magenta, black);
+    for (y = 2; y < 25; y++)
+    {
+        printc(BOUNDS_X1-1, y, '\x86');
+        printc(BOUNDS_X2+1, y, '\x86');
+    }
+
+    // Call loop
     gameloop();
     // protoloop();
 }
