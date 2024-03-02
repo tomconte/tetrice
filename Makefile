@@ -1,6 +1,6 @@
 all:
-	cc68 -tmc10 tetrice.c
-	mv a.out.c10 a.out.k7
+	cc68 -tmc10 tetrice.c -o tetrice
+	mv tetrice.c10 tetrice.k7
 
 clean:
-	rm *.o a.out a.out.k7
+	rm -f *.o a.out a.out.k7 tetrice.k7
