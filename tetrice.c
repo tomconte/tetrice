@@ -76,6 +76,22 @@ void printc(unsigned char x, unsigned char y, unsigned char c)
     POKE(R0EXEC, 1);
 }
 
+// Get character at position
+uint8_t charatxy(uint8_t column, uint8_t line)
+{
+    // Lines 1 to 7 do not exist... skip them
+    if (line > 0)
+        line += 7;
+
+    POKE(R6, line);   // R6 (MP / LINE)
+    POKE(R7, column); // R7 (MP / COL)
+
+    POKE(R0EXEC, 8);
+    BUSY();
+
+    return PEEK(R1);
+}
+
 /************************************************************/
 /* Keyboard and clock                                       */
 /************************************************************/
@@ -215,7 +231,7 @@ void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsign
     color(tetrominos_colors[piece], black);
     for (i = 0; i < 4; i++)
     {
-        printc(x + (*tetromino)[i][0], y + (*tetromino)[i][1], '\x7F');
+        printc(x + (*tetromino)[i][0], y + (*tetromino)[i][1], 'X');
     }
 }
 
@@ -231,6 +247,60 @@ void erase_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned
     }
 }
 
+// Detect collision left
+uint8_t collision_left(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+{
+    tetromino *tetromino = tetrominos[piece][rotation];
+    uint8_t i;
+
+    for (i = 0; i < 4; i++)
+    {
+        if ((*tetromino)[i][2] & SIDE_LEFT)
+        {
+            if (charatxy(x + (*tetromino)[i][0] - 1, y + (*tetromino)[i][1]) != ' ')
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
+// Detect collision right
+uint8_t collision_right(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+{
+    tetromino *tetromino = tetrominos[piece][rotation];
+    uint8_t i;
+
+    for (i = 0; i < 4; i++)
+    {
+        if ((*tetromino)[i][2] & SIDE_RIGHT)
+        {
+            if (charatxy(x + (*tetromino)[i][0] + 1, y + (*tetromino)[i][1]) != ' ')
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
+// Detect collision bottom
+uint8_t collision_bottom(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+{
+    tetromino *tetromino = tetrominos[piece][rotation];
+    uint8_t i;
+
+    for (i = 0; i < 4; i++)
+    {
+        if ((*tetromino)[i][2] & SIDE_BOTTOM)
+        {
+            if (charatxy(x + (*tetromino)[i][0], y + (*tetromino)[i][1] + 1) != ' ')
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
 /************************************************************/
 /* Proto loop                                                */
 /************************************************************/
@@ -239,8 +309,8 @@ void protoloop()
 {
     unsigned char x, y;
     unsigned char i;
-    char c;
-    char cur_shape[] = {0, 0, 0, 0, 0, 0, 0};
+    unsigned char c;
+    unsigned char cur_shape[] = {0, 0, 0, 0, 0, 0, 0};
 
     // Print pieces with all shapes
     y = 2;
@@ -274,10 +344,10 @@ void protoloop()
 /* Game loop                                                */
 /************************************************************/
 
-#define START_X 15
+#define START_X 20
 #define START_Y 3
 #define BOUNDS_X1 15
-#define BOUNDS_X2 25
+#define BOUNDS_X2 26
 
 void gameloop()
 {
@@ -321,6 +391,24 @@ void gameloop()
         // Piece falls
         if (c == 0 || c == ' ')
         {
+            // Piece has reached the bottom or another piece
+            if (collision_bottom(piece, x, y, rotation))
+            {
+                // Reset position
+                x = START_X;
+                y = START_Y;
+                rotation = 0;
+                px = x;
+                py = y;
+                protation = rotation;
+                // Select a random piece
+                piece = PEEK(0x000A) % 7;
+                // Set initial timer
+                timeout_ticks = speed;
+                // Continue loop
+                continue;
+            }
+            // Move piece down
             y++;
             timeout_ticks = speed;
         }
@@ -330,35 +418,17 @@ void gameloop()
             ticks(2);
         }
 
-        // Piece has reached the bottom
-        if (y > 20)
-        {
-            // Reset position
-            x = START_X;
-            y = START_Y;
-            rotation = 0;
-            px = x;
-            py = y;
-            protation = rotation;
-            // Select a random piece
-            piece = PEEK(0x000A) % 7;
-            // Set initial timer
-            timeout_ticks = speed;
-            // Continue loop
-            continue;
-        }
-
         // Move piece
         switch (c)
         {
         case 'X':
             return;
         case 'O':
-            if (x > BOUNDS_X1)
+            if (collision_left(piece, x, y, rotation) == 0)
                 x--;
             break;
         case 'P':
-            if (x+tetrominos_widths[piece][rotation] <= BOUNDS_X2)
+            if (collision_right(piece, x, y, rotation) == 0)
                 x++;
             break;
         case 'Z':
@@ -400,9 +470,10 @@ void main()
     color(magenta, black);
     for (y = 2; y < 25; y++)
     {
-        printc(BOUNDS_X1-1, y, '\x86');
-        printc(BOUNDS_X2+1, y, '\x86');
+        printc(BOUNDS_X1-1, y, '#');
+        printc(BOUNDS_X2+1, y, '#');
     }
+    prints(BOUNDS_X1, 24, "============");
 
     // Call loop
     gameloop();
