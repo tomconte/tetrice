@@ -231,7 +231,7 @@ void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsign
     color(tetrominos_colors[piece], black);
     for (i = 0; i < 4; i++)
     {
-        printc(x + (*tetromino)[i][0], y + (*tetromino)[i][1], 'X');
+        printc(x + (*tetromino)[i][0], y + (*tetromino)[i][1], '\x7F');
     }
 }
 

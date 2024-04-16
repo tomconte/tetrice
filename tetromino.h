@@ -76,9 +76,9 @@ tetromino tetromino_T_1 = {
 */
 tetromino tetromino_T_2 = {
     {0, 0, SIDE_LEFT | SIDE_RIGHT},
-    {0, 1, 0},
-    {0, 2, SIDE_RIGHT | SIDE_BOTTOM},
-    {1, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM}
+    {0, 1, SIDE_LEFT},
+    {0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
+    {1, 1, SIDE_RIGHT | SIDE_BOTTOM}
 };
 
 /*
