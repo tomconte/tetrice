@@ -8,6 +8,12 @@
 char tetrominos_colors[] = {
     yellow, cyan, pink, green, red, blue, orange};
 
+// Playfield bounds etc.
+#define START_X 20
+#define START_Y 3
+#define BOUNDS_X1 15
+#define BOUNDS_X2 26
+
 /************************************************************/
 /* Macros                                                   */
 /************************************************************/
@@ -301,6 +307,47 @@ uint8_t collision_bottom(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
     return 0;
 }
 
+// Check full lines and return score
+uint8_t check_full_lines()
+{
+    uint8_t x, y, z;
+    uint8_t full;
+    uint8_t score = 0;
+
+    for (y = 2; y < 24; y++)
+    {
+        full = 1;
+        for (x = BOUNDS_X1; x <= BOUNDS_X2; x++)
+        {
+            if (charatxy(x, y) == ' ')
+            {
+                full = 0;
+                break;
+            }
+        }
+        if (full)
+        {
+            // Erase line
+            for (x = BOUNDS_X1; x <= BOUNDS_X2; x++)
+            {
+                printc(x, y, ' ');
+            }
+            // Move lines down
+            for (x = BOUNDS_X1; x <= BOUNDS_X2; x++)
+            {
+                for (z = y; z > 2; z--)
+                {
+                    printc(x, z, charatxy(x, z - 1));
+                }
+            }
+            // Increment score
+            score++;
+        }
+    }
+
+    return score;
+}
+
 /************************************************************/
 /* Proto loop                                                */
 /************************************************************/
@@ -343,11 +390,6 @@ void protoloop()
 /************************************************************/
 /* Game loop                                                */
 /************************************************************/
-
-#define START_X 20
-#define START_Y 3
-#define BOUNDS_X1 15
-#define BOUNDS_X2 26
 
 void gameloop()
 {
@@ -394,6 +436,9 @@ void gameloop()
             // Piece has reached the bottom or another piece
             if (collision_bottom(piece, x, y, rotation))
             {
+                // Check for full lines
+                score += check_full_lines();
+
                 // Reset position
                 x = START_X;
                 y = START_Y;
@@ -401,10 +446,13 @@ void gameloop()
                 px = x;
                 py = y;
                 protation = rotation;
+
                 // Select a random piece
                 piece = PEEK(0x000A) % 7;
+
                 // Set initial timer
                 timeout_ticks = speed;
+
                 // Continue loop
                 continue;
             }
