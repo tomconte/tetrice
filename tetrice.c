@@ -82,6 +82,15 @@ void printc(unsigned char x, unsigned char y, unsigned char c)
     POKE(R0EXEC, 1);
 }
 
+// Display a graphical char with position
+void printcg(unsigned char x, unsigned char y, unsigned char c)
+{
+    posxy(x, y);
+    POKE(R1, c);
+    POKE(R2, 0x20);
+    POKE(R0EXEC, 1);
+}
+
 // Get character at position
 uint8_t charatxy(uint8_t column, uint8_t line)
 {
@@ -549,10 +558,10 @@ void main()
     color(magenta, black);
     for (y = 2; y < 25; y++)
     {
-        printc(BOUNDS_X1 - 1, y, '\x80');
-        printc(BOUNDS_X2 + 1, y, '#');
+        printcg(BOUNDS_X1 - 1, y, '\x59');
+        printcg(BOUNDS_X2 + 1, y, '\x59');
     }
-    prints(BOUNDS_X1, 24, "============");
+    prints(BOUNDS_X1, 24, "\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66");
 
     color(white, black);
     prints(BOUNDS_X2+3, 2, "SCORE");
