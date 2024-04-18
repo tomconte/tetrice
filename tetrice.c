@@ -152,7 +152,7 @@ void sleep(uint8_t seconds)
     while (1)
     {
         clock = PEEK(0x0008); // clock control register
-        PEEK(0x0009); // need to read 0x09/0x0A to reset the TOF control bit
+        PEEK(0x0009);         // need to read 0x09/0x0A to reset the TOF control bit
 
         // wait for clock bit 5 to be set
         if (clock & 0x20)
@@ -174,7 +174,7 @@ void ticks(uint8_t ticks)
     while (1)
     {
         clock = PEEK(0x0008); // clock control register
-        PEEK(0x0009); // need to read 0x09/0x0A to reset the TOF control bit
+        PEEK(0x0009);         // need to read 0x09/0x0A to reset the TOF control bit
 
         // wait for clock bit 5 to be set
         if (clock & 0x20)
@@ -202,7 +202,7 @@ uint8_t wait()
     while (1)
     {
         clock = PEEK(0x0008); // clock control register
-        PEEK(0x0009); // need to read 0x09 to reset the TOF control bit
+        PEEK(0x0009);         // need to read 0x09 to reset the TOF control bit
 
         // wait for clock bit 5 to be set
         if (clock & 0x20)
@@ -312,7 +312,7 @@ uint8_t check_full_lines()
 {
     uint8_t x, y, z;
     uint8_t full;
-    uint8_t score = 0;
+    uint8_t nlines = 0;
 
     for (y = 2; y < 24; y++)
     {
@@ -340,12 +340,37 @@ uint8_t check_full_lines()
                     printc(x, z, charatxy(x, z - 1));
                 }
             }
-            // Increment score
-            score++;
+            // Increment nulber of lines
+            nlines++;
         }
     }
 
-    return score;
+    // Return score based on value of nlines
+    // 1 line = 1 point
+    // 2 lines = 3 points
+    // 3 lines = 5 points
+    // 4 lines = 8 points
+    switch (nlines)
+    {
+    case 1:
+        return 1;
+    case 2:
+        return 3;
+    case 3:
+        return 5;
+    case 4:
+        return 8;
+    default:
+        return 0;
+    }
+}
+
+// Convert the score int to a string
+void score_to_string(uint8_t score, char *str)
+{
+    str[0] = '0' + (score / 10);
+    str[1] = '0' + (score % 10);
+    str[2] = '\0';
 }
 
 /************************************************************/
@@ -409,6 +434,8 @@ void gameloop()
     unsigned char score = 0;
     // Input key
     unsigned char c;
+    // Score string
+    char score_str[3];
 
     // Set initial timer
     timeout_ticks = speed;
@@ -421,6 +448,10 @@ void gameloop()
 
         // Display piece
         display_piece(piece, x, y, rotation);
+
+        // Display score
+        score_to_string(score, score_str);
+        prints(BOUNDS_X2+3, 3, score_str);
 
         // Keep previous position
         px = x;
@@ -518,10 +549,13 @@ void main()
     color(magenta, black);
     for (y = 2; y < 25; y++)
     {
-        printc(BOUNDS_X1-1, y, '#');
-        printc(BOUNDS_X2+1, y, '#');
+        printc(BOUNDS_X1 - 1, y, '\x80');
+        printc(BOUNDS_X2 + 1, y, '#');
     }
     prints(BOUNDS_X1, 24, "============");
+
+    color(white, black);
+    prints(BOUNDS_X2+3, 2, "SCORE");
 
     // Call loop
     gameloop();
