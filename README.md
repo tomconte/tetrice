@@ -20,3 +20,9 @@ The `k7` file can then be loaded as a cassette tape in an emulator; or converted
 - `P` : right
 - `A` and `Z` : rotate
 - Space bar : accelerate / drop
+
+## Demo video
+
+Here is a short Webm of the gameplay using DCAlice.
+
+![Demo](media/Demo%20TETRICE%20beta.webm)
