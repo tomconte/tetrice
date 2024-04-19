@@ -234,6 +234,19 @@ uint8_t wait()
     }
 }
 
+// Wait for key forever
+uint8_t wait_key()
+{
+    uint8_t c;
+
+    while (1)
+    {
+        c = scankey();
+        if (c != 0)
+            return c;
+    }
+}
+
 /************************************************************/
 /* Pieces                                                   */
 /************************************************************/
@@ -479,6 +492,13 @@ void gameloop()
                 // Check for full lines
                 score += check_full_lines();
 
+                // Accelerate speed every 10 points
+                if (score > 0 && score % 10 == 0)
+                {
+                    if (speed > 5)
+                        speed -= 1;
+                }
+
                 // Reset position
                 x = START_X;
                 y = START_Y;
@@ -492,6 +512,19 @@ void gameloop()
 
                 // Set initial timer
                 timeout_ticks = speed;
+
+                // Check for game over
+                if (collision_bottom(piece, x, y, rotation))
+                {
+                    // Game over
+                    color(white, black);
+                    prints(BOUNDS_X1+1, 10, "GAME  OVER");
+                    ticks(15);
+                    // Wait for key
+                    wait_key();
+                    ticks(5);
+                    return;
+                }
 
                 // Continue loop
                 continue;
@@ -543,30 +576,42 @@ void main()
 {
     unsigned char y;
 
-    // Clear screen
-    color(white, black);
-    for (y = 0; y < 25; y++)
+    while (1)
     {
-        prints(0, y, "                                        ");
+
+        // Clear screen
+        color(white, black);
+        for (y = 0; y < 25; y++)
+        {
+            prints(0, y, "                                        ");
+        }
+
+        // Print message
+        color(white, black);
+        prints(9, 0, "Tetris + Alice = TETRICE");
+
+        // Draw background
+        color(magenta, black);
+        for (y = 0; y < 13; y++)
+        {
+            printcg(BOUNDS_X1 - 1, 2+y*2, '\x59');
+            printcg(BOUNDS_X2 + 1, 2+y*2, '\x59');
+            printcg(BOUNDS_X1 - 1, 2+y*2+1, '\x66');
+            printcg(BOUNDS_X2 + 1, 2+y*2+1, '\x66');
+        }
+        prints(BOUNDS_X1, 24, "\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66");
+
+        color(white, black);
+        prints(BOUNDS_X2+3, 2, "SCORE");
+
+        // Welcome message and wait to start game
+        color(white, black);
+        prints(BOUNDS_X1+1, 10, "PRESS  KEY");
+        wait_key();
+        ticks(5);
+        prints(BOUNDS_X1+1, 10, "          ");
+
+        // Call game loop
+        gameloop();
     }
-
-    // Print message
-    color(white, black);
-    prints(7, 0, "Tetris + Alice = TETRICE");
-
-    // Draw background
-    color(magenta, black);
-    for (y = 2; y < 25; y++)
-    {
-        printcg(BOUNDS_X1 - 1, y, '\x59');
-        printcg(BOUNDS_X2 + 1, y, '\x59');
-    }
-    prints(BOUNDS_X1, 24, "\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66");
-
-    color(white, black);
-    prints(BOUNDS_X2+3, 2, "SCORE");
-
-    // Call loop
-    gameloop();
-    // protoloop();
 }
