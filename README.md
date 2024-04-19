@@ -25,4 +25,4 @@ The `k7` file can then be loaded as a cassette tape in an emulator; or converted
 
 Here is a short Webm of the gameplay using DCAlice.
 
-[!Demo](media/Demo%20TETRICE%20beta.mp4)
+[Demo TETRICE beta.webm](https://github.com/tomconte/tetrice/assets/199027/60b8ff3d-9d5b-4f72-bd2a-a3b55ed03b94)
