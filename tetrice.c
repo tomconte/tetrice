@@ -396,45 +396,6 @@ void score_to_string(uint8_t score, char *str)
 }
 
 /************************************************************/
-/* Proto loop                                                */
-/************************************************************/
-
-void protoloop()
-{
-    unsigned char x, y;
-    unsigned char i;
-    unsigned char c;
-    unsigned char cur_shape[] = {0, 0, 0, 0, 0, 0, 0};
-
-    // Print pieces with all shapes
-    y = 2;
-    x = 0;
-    while (1)
-    {
-        for (i = 0; i < 7; i++)
-        {
-            display_piece(i, x + i * 5, y, cur_shape[i]);
-        }
-        // Wait for a key
-        timeout_ticks = 15;
-        c = wait();
-        if (c == 'X')
-            return;
-        // Erase pieces
-        for (i = 0; i < 7; i++)
-        {
-            erase_piece(i, x + i * 5, y, cur_shape[i]);
-            // Increment shape index
-            ++cur_shape[i];
-            if (cur_shape[i] == tetrominos_nb_shapes[i])
-            {
-                cur_shape[i] = 0;
-            }
-        }
-    }
-}
-
-/************************************************************/
 /* Game loop                                                */
 /************************************************************/
 
