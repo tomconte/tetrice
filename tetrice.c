@@ -23,10 +23,7 @@ char tetrominos_colors[] = {
 #define PEEK(address) (*((volatile uint8_t *)(address)))
 
 // Wait for EF9345
-#define BUSY()                \
-    while (PEEK(0xBF20) <= 0) \
-    {                         \
-    }
+#define BUSY() while (PEEK(R0) & 0x80) {}
 
 /************************************************************/
 /* Display functions for Alice 32/90                        */
@@ -71,6 +68,7 @@ void prints(unsigned char x, unsigned char y, unsigned char *text)
     {
         POKE(R1, *c);
         POKE(R0EXEC, 1);
+        BUSY();
     }
 }
 
@@ -80,6 +78,7 @@ void printc(unsigned char x, unsigned char y, unsigned char c)
     posxy(x, y);
     POKE(R1, c);
     POKE(R0EXEC, 1);
+    BUSY();
 }
 
 // Display a graphical char with position
@@ -89,6 +88,7 @@ void printcg(unsigned char x, unsigned char y, unsigned char c)
     POKE(R1, c);
     POKE(R2, 0x20);
     POKE(R0EXEC, 1);
+    BUSY();
 }
 
 // Get character at position
