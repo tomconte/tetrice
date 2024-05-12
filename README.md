@@ -14,6 +14,8 @@ Run `make` to build the executable: `tetrice.k7`.
 
 The `k7` file can then be loaded as a cassette tape in an emulator; or converted to WAV to be loaded on a real machine.
 
+For your convenience, you will find the `k7` and `wav` files attached to the releases.
+
 ## How to play
 
 - `O` : left
