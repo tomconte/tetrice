@@ -343,6 +343,49 @@ uint8_t collision_bottom(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
     return 0;
 }
 
+// Check if a piece can rotate by checking collisions
+uint8_t check_rotation(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t direction)
+{
+    uint8_t new_rotation;
+    tetromino *tetromino;
+    uint8_t i;
+
+    // Erase piece
+    erase_piece(piece, x, y, rotation);
+
+    // Rotate piece
+    if (direction == 0)
+    {
+        if (rotation < tetrominos_nb_shapes[piece] - 1)
+            new_rotation = rotation + 1;
+        else
+            new_rotation = 0;
+    }
+    else
+    {
+        if (rotation > 0)
+            new_rotation = rotation - 1;
+        else
+            new_rotation = tetrominos_nb_shapes[piece] - 1;
+    }
+
+    // Check collision
+    tetromino = tetrominos[piece][new_rotation];
+    for (i = 0; i < 4; i++)
+    {
+        if (charatxy(x + (*tetromino)[i][0], y + (*tetromino)[i][1]) != ' ')
+        {
+            // Collision
+            // Restore piece
+            display_piece(piece, x, y, rotation);
+            return rotation;
+        }
+    }
+
+    // No collision
+    return new_rotation;
+}
+
 // Check full lines and return score
 uint8_t check_full_lines()
 {
@@ -536,16 +579,10 @@ void gameloop()
                 x++;
             break;
         case 'Z':
-            if (rotation < tetrominos_nb_shapes[piece] - 1)
-                rotation++;
-            else
-                rotation = 0;
+            rotation = check_rotation(piece, x, y, rotation, 0);
             break;
         case 'A':
-            if (rotation > 0)
-                rotation--;
-            else
-                rotation = tetrominos_nb_shapes[piece] - 1;
+            rotation = check_rotation(piece, x, y, rotation, 1);
             break;
         }
     }
