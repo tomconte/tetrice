@@ -505,7 +505,7 @@ void gameloop()
         else
         {
             // anti-bounce
-            ticks(2);
+            ticks(3);
         }
 
         // Move piece
