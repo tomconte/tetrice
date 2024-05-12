@@ -72,6 +72,20 @@ void prints(unsigned char x, unsigned char y, unsigned char *text)
     }
 }
 
+// Display a graphical string with position
+void printsg(unsigned char x, unsigned char y, unsigned char *text)
+{
+    char *c = text;
+    posxy(x, y);
+    for (; *c != '\0'; c++)
+    {
+        POKE(R1, *c);
+        POKE(R2, 0x20);
+        POKE(R0EXEC, 1);
+        BUSY();
+    }
+}
+
 // Display a char with position
 void printc(unsigned char x, unsigned char y, unsigned char c)
 {
@@ -556,8 +570,20 @@ void main()
         }
 
         // Print message
-        color(white, black);
+        color(yellow, black);
         prints(9, 0, "Tetris + Alice = TETRICE");
+
+        // Title
+        color(yellow, black);
+        printsg(0, 2, "\x6b\x41\x77\x41\x6b\x41\x66\x55\x55\x57\x41\x77\x41");
+        printsg(0, 3, "\x4a\x40\x4d\x44\x4a\x40\x45\x45\x45\x4d\x44\x4d\x44");
+
+        // Instructions
+        color(pink, black);
+        prints(2, 11, "O: LEFT");
+        prints(2, 12, "P: RIGHT");
+        prints(2, 13, "Z: ROTATE");
+        prints(2, 14, "A: UNROTATE");
 
         // Draw background
         color(magenta, black);
@@ -569,7 +595,7 @@ void main()
         prints(BOUNDS_X1 - 1, 24, "\x42\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x41");
         prints(BOUNDS_X1 - 1, 1, "\x60\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x50");
 
-        color(yellow, black);
+        color(white, black);
         prints(BOUNDS_X2+3, 2, "SCORE");
         prints(BOUNDS_X2+3, 5, "LEVEL");
 
