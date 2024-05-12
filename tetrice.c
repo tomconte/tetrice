@@ -387,12 +387,13 @@ uint8_t check_full_lines()
     }
 }
 
-// Convert the score int to a string
-void score_to_string(uint8_t score, char *str)
+// Convert int to a three char string with leading zeros
+void int_to_string(uint8_t score, char *str)
 {
-    str[0] = '0' + (score / 10);
-    str[1] = '0' + (score % 10);
-    str[2] = '\0';
+    str[0] = '0' + (score / 100);
+    str[1] = '0' + ((score % 100) / 10);
+    str[2] = '0' + (score % 10);
+    str[3] = '\0';
 }
 
 /************************************************************/
@@ -413,12 +414,14 @@ void gameloop()
     unsigned char px = START_X, py = START_Y, protation = 0;
     // Set start speed
     unsigned char speed = 20;
+    // Set start level
+    unsigned char level = 1;
     // Set start score to 0
     unsigned char score = 0;
     // Input key
     unsigned char c;
-    // Score string
-    char score_str[3];
+    // Score/level string
+    char print_str[4];
 
     // Set initial timer
     timeout_ticks = speed;
@@ -433,8 +436,12 @@ void gameloop()
         display_piece(piece, x, y, rotation);
 
         // Display score
-        score_to_string(score, score_str);
-        prints(BOUNDS_X2+3, 3, score_str);
+        int_to_string(score, print_str);
+        prints(BOUNDS_X2+3, 3, print_str);
+
+        // Display level
+        int_to_string(level, print_str);
+        prints(BOUNDS_X2+3, 6, print_str);
 
         // Keep previous position
         px = x;
@@ -456,6 +463,7 @@ void gameloop()
                 // Accelerate speed every 10 points
                 if (score > 0 && score % 10 == 0)
                 {
+                    level++;
                     if (speed > 5)
                         speed -= 1;
                 }
@@ -553,17 +561,17 @@ void main()
 
         // Draw background
         color(magenta, black);
-        for (y = 0; y < 13; y++)
+        for (y = 0; y < 23; y++)
         {
-            printcg(BOUNDS_X1 - 1, 2+y*2, '\x59');
-            printcg(BOUNDS_X2 + 1, 2+y*2, '\x59');
-            printcg(BOUNDS_X1 - 1, 2+y*2+1, '\x66');
-            printcg(BOUNDS_X2 + 1, 2+y*2+1, '\x66');
+            printcg(BOUNDS_X1 - 1, 2+y, '\x6A');
+            printcg(BOUNDS_X2 + 1, 2+y, '\x55');
         }
-        prints(BOUNDS_X1, 24, "\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66");
+        prints(BOUNDS_X1 - 1, 24, "\x42\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x41");
+        prints(BOUNDS_X1 - 1, 1, "\x60\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x50");
 
-        color(white, black);
+        color(yellow, black);
         prints(BOUNDS_X2+3, 2, "SCORE");
+        prints(BOUNDS_X2+3, 5, "LEVEL");
 
         // Welcome message and wait to start game
         color(white, black);
