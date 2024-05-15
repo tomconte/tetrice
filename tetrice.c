@@ -621,6 +621,7 @@ void main()
         prints(2, 12, "P: RIGHT");
         prints(2, 13, "Z: ROTATE");
         prints(2, 14, "A: UNROTATE");
+        prints(2, 15, "SPACE: DROP");
 
         // Draw background
         color(magenta, black);
