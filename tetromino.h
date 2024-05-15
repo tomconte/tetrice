@@ -70,15 +70,15 @@ tetromino tetromino_T_1 = {
 };
 
 /*
-* X
+*  X
 * XX
-* X
+*  X
 */
 tetromino tetromino_T_2 = {
-    {0, 0, SIDE_LEFT | SIDE_RIGHT},
-    {0, 1, SIDE_LEFT},
-    {0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-    {1, 1, SIDE_RIGHT | SIDE_BOTTOM}
+    {1, 0, SIDE_LEFT | SIDE_RIGHT},
+    {1, 1, SIDE_RIGHT},
+    {1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
+    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
 };
 
 /*
@@ -92,16 +92,17 @@ tetromino tetromino_T_3 = {
     {1, 0, SIDE_LEFT | SIDE_RIGHT},
 };
 
+
 /*
-*  X
+* X
 * XX
-*  X
+* X
 */
 tetromino tetromino_T_4 = {
-    {1, 0, SIDE_LEFT | SIDE_RIGHT},
-    {1, 1, SIDE_RIGHT},
-    {1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
+    {0, 0, SIDE_LEFT | SIDE_RIGHT},
+    {0, 1, SIDE_LEFT},
+    {0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
+    {1, 1, SIDE_RIGHT | SIDE_BOTTOM}
 };
 
 uint8_t tetromino_T_widths[] = {3, 2, 3, 2};
@@ -175,14 +176,14 @@ tetromino tetromino_J_1 = {
 };
 
 /*
+* X
 * XXX
-*   X
 */
 tetromino tetromino_J_2 = {
-    {0, 0, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 0, SIDE_BOTTOM},
-    {2, 0, SIDE_RIGHT},
-    {2, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
+    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
+    {1, 1, SIDE_BOTTOM},
+    {2, 1, SIDE_RIGHT | SIDE_BOTTOM},
+    {0, 0, SIDE_LEFT | SIDE_RIGHT}
 };
 
 /*
@@ -198,14 +199,14 @@ tetromino tetromino_J_3 = {
 };
 
 /*
-* X
 * XXX
+*   X
 */
 tetromino tetromino_J_4 = {
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 1, SIDE_BOTTOM},
-    {2, 1, SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 0, SIDE_LEFT | SIDE_RIGHT}
+    {0, 0, SIDE_LEFT | SIDE_BOTTOM},
+    {1, 0, SIDE_BOTTOM},
+    {2, 0, SIDE_RIGHT},
+    {2, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
 };
 
 tetromino *tetromino_J_shapes[] = {&tetromino_J_1, &tetromino_J_2, &tetromino_J_3, &tetromino_J_4};
