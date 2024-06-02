@@ -530,7 +530,7 @@ void gameloop()
                     if ((score / 10) != ((score + line_score) / 10))
                     {
                         level++;
-                        if (speed > 5)
+                        if (speed > 1)
                             speed -= 1;
                     }
 
