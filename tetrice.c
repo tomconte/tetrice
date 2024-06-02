@@ -475,6 +475,8 @@ void gameloop()
     unsigned char level = 1;
     // Set start score to 0
     unsigned char score = 0;
+    // Line score
+    unsigned char line_score = 0;
     // Input key
     unsigned char c;
     // Score/level string
@@ -487,6 +489,14 @@ void gameloop()
     // Set initial timer
     timeout_ticks = speed;
 
+    // Display initial score
+    int_to_string(score, print_str);
+    prints(BOUNDS_X2+3, 3, print_str);
+
+    // Display initial level
+    int_to_string(level, print_str);
+    prints(BOUNDS_X2+3, 6, print_str);
+
     // Loop until game over
     while (1)
     {
@@ -495,14 +505,6 @@ void gameloop()
 
         // Display piece
         display_piece(piece, x, y, rotation);
-
-        // Display score
-        int_to_string(score, print_str);
-        prints(BOUNDS_X2+3, 3, print_str);
-
-        // Display level
-        int_to_string(level, print_str);
-        prints(BOUNDS_X2+3, 6, print_str);
 
         // Keep previous position
         px = x;
@@ -519,14 +521,31 @@ void gameloop()
             if (collision_bottom(piece, x, y, rotation))
             {
                 // Check for full lines
-                score += check_full_lines();
-
-                // Accelerate speed every 10 points
-                if (score > 0 && score % 10 == 0)
+                line_score = check_full_lines();
+                if (line_score > 0)
                 {
-                    level++;
-                    if (speed > 5)
-                        speed -= 1;
+                    // Accelerate speed every 10 points
+                    // The score can increase by more than 1 point
+                    // so we need to check if the score passed a multiple of 10
+                    if ((score / 10) != ((score + line_score) / 10))
+                    {
+                        level++;
+                        if (speed > 5)
+                            speed -= 1;
+                    }
+
+                    // Update score
+                    score += line_score;
+
+                    // Display score
+                    int_to_string(score, print_str);
+                    color(tetrominos_colors[piece], black);
+                    prints(BOUNDS_X2+3, 3, print_str);
+
+                    // Display level
+                    int_to_string(level, print_str);
+                    color(tetrominos_colors[piece], black);
+                    prints(BOUNDS_X2+3, 6, print_str);
                 }
 
                 // Reset position
