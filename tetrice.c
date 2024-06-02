@@ -478,7 +478,11 @@ void gameloop()
     // Input key
     unsigned char c;
     // Score/level string
-    char print_str[4];
+    unsigned char print_str[4];
+    // Anti-bounce: previous key
+    unsigned char prev_c = 0;
+    // Anti-bounce: counter
+    unsigned char bounce = 0;
 
     // Set initial timer
     timeout_ticks = speed;
@@ -561,8 +565,23 @@ void gameloop()
         }
         else
         {
-            // anti-bounce
-            ticks(3);
+            // Anti-bounce checks
+            // If the same key is pressed, ignore it for a number of iterations
+            // Lateral movement keys are ignored for 6 iterations
+            // Rotation keys are ignored for 10 iterations
+            if (c == prev_c)
+            {
+                if (((c == 'O' || c == 'P') && bounce > 6) || ((c == 'Z' || c == 'A') && bounce > 10))
+                    bounce = 0;
+                else
+                    c = 0;
+                bounce++;
+            }
+            else
+            {
+                prev_c = c;
+                bounce = 0;
+            }
         }
 
         // Move piece
