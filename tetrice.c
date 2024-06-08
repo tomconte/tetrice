@@ -586,11 +586,11 @@ void gameloop()
         {
             // Anti-bounce checks
             // If the same key is pressed, ignore it for a number of iterations
-            // Lateral movement keys are ignored for 15 iterations
-            // Rotation keys are ignored for 25 iterations
+            #define LATERAL_SKIP 15
+            #define ROTATION_SKIP 20
             if (c == prev_c)
             {
-                if (((c == 'O' || c == 'P') && bounce > 15) || ((c == 'Z' || c == 'A') && bounce > 25))
+                if (((c == 'O' || c == 'P') && bounce > LATERAL_SKIP) || ((c == 'Z' || c == 'A') && bounce > ROTATION_SKIP))
                     bounce = 0;
                 else
                     c = 0;
