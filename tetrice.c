@@ -10,7 +10,7 @@ char tetrominos_colors[] = {
 
 // Playfield bounds etc.
 #define START_X 20
-#define START_Y 3
+#define START_Y 2
 #define BOUNDS_X1 15
 #define BOUNDS_X2 26
 
@@ -497,14 +497,14 @@ void gameloop()
     int_to_string(level, print_str);
     prints(BOUNDS_X2+3, 6, print_str);
 
+    // Set VSYNC mask
+    POKE(R0, 0x95); // VRM
+
     // Loop until game over
     while (1)
     {
-        // Erase piece
-        erase_piece(piece, px, py, protation);
-
-        // Display piece
-        display_piece(piece, x, y, rotation);
+        // VSYNC
+        while (PEEK(R0) & 0x04) {}
 
         // Keep previous position
         px = x;
@@ -586,8 +586,8 @@ void gameloop()
         {
             // Anti-bounce checks
             // If the same key is pressed, ignore it for a number of iterations
-            #define LATERAL_SKIP 15
-            #define ROTATION_SKIP 20
+            #define LATERAL_SKIP 1
+            #define ROTATION_SKIP 2
             if (c == prev_c)
             {
                 if (((c == 'O' || c == 'P') && bounce > LATERAL_SKIP) || ((c == 'Z' || c == 'A') && bounce > ROTATION_SKIP))
@@ -623,6 +623,12 @@ void gameloop()
             rotation = check_rotation(piece, x, y, rotation, 1);
             break;
         }
+
+        // Erase piece
+        erase_piece(piece, px, py, protation);
+
+        // Display piece
+        display_piece(piece, x, y, rotation);
     }
 }
 
