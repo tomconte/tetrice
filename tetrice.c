@@ -121,6 +121,19 @@ uint8_t charatxy(uint8_t column, uint8_t line)
     return PEEK(R1);
 }
 
+// Set VSYNC mask
+void set_vsync_mask()
+{
+    POKE(R0, 0x95); // VRM
+    BUSY();
+}
+
+// VSYNC
+void vsync()
+{
+    while (PEEK(R0) & 0x04) {}
+}
+
 /************************************************************/
 /* Keyboard and clock                                       */
 /************************************************************/
@@ -205,45 +218,6 @@ void ticks(uint8_t ticks)
             tick++;
             if (tick == ticks)
                 break;
-        }
-    }
-}
-
-// Wait for key or timeout in ticks
-// Remember: 15 ticks == 1 second
-
-// Global variable to store the timeout in ticks
-// this needs to be set before calling wait()
-uint8_t timeout_ticks = 0;
-
-uint8_t wait()
-{
-    uint8_t clock;
-    uint8_t tick = 0;
-    uint8_t c;
-
-    while (1)
-    {
-        clock = PEEK(0x0008); // clock control register
-        PEEK(0x0009);         // need to read 0x09 to reset the TOF control bit
-
-        // wait for clock bit 5 to be set
-        if (clock & 0x20)
-        {
-            tick++;
-            // if timeout is reached, return 0
-            if (tick >= timeout_ticks)
-                return 0;
-        }
-
-        // scan the keyboard
-        c = scankey();
-        if (c != 0)
-        {
-            // if a key is pressed, decrement the timeout
-            timeout_ticks -= tick;
-            // and return the key
-            return c;
         }
     }
 }
@@ -469,8 +443,10 @@ void gameloop()
     unsigned char rotation = 0;
     // Previous values
     unsigned char px = START_X, py = START_Y, protation = 0;
+    // Timeout
+    unsigned char timeout;
     // Set start speed
-    unsigned char speed = 20;
+    unsigned char speed = 100;
     // Set start level
     unsigned char level = 1;
     // Set start score to 0
@@ -486,9 +462,6 @@ void gameloop()
     // Anti-bounce: counter
     unsigned char bounce = 0;
 
-    // Set initial timer
-    timeout_ticks = speed;
-
     // Display initial score
     int_to_string(score, print_str);
     prints(BOUNDS_X2+3, 3, print_str);
@@ -497,14 +470,13 @@ void gameloop()
     int_to_string(level, print_str);
     prints(BOUNDS_X2+3, 6, print_str);
 
-    // Set VSYNC mask
-    POKE(R0, 0x95); // VRM
+    // Set initial timer
+    timeout = speed;
 
     // Loop until game over
     while (1)
     {
-        // VSYNC
-        while (PEEK(R0) & 0x04) {}
+        vsync();
 
         // Keep previous position
         px = x;
@@ -512,10 +484,10 @@ void gameloop()
         protation = rotation;
 
         // Wait for a key
-        c = wait();
+        c = scankey();
 
         // Piece falls
-        if (c == 0 || c == ' ')
+        if (--timeout == 0 || c == ' ')
         {
             // Piece has reached the bottom or another piece
             if (collision_bottom(piece, x, y, rotation))
@@ -560,7 +532,7 @@ void gameloop()
                 piece = PEEK(0x000A) % 7;
 
                 // Set initial timer
-                timeout_ticks = speed;
+                timeout = speed;
 
                 // Check for game over
                 if (collision_bottom(piece, x, y, rotation))
@@ -578,19 +550,19 @@ void gameloop()
                 // Continue loop
                 continue;
             }
+
             // Move piece down
             y++;
-            timeout_ticks = speed;
+            timeout = speed;
         }
         else
         {
             // Anti-bounce checks
             // If the same key is pressed, ignore it for a number of iterations
-            #define LATERAL_SKIP 1
-            #define ROTATION_SKIP 2
-            if (c == prev_c)
+            #define ROTATION_SKIP 25
+            if ((c == 'Z' || c == 'A' || c == 'O' || c == 'P') && (c == prev_c))
             {
-                if (((c == 'O' || c == 'P') && bounce > LATERAL_SKIP) || ((c == 'Z' || c == 'A') && bounce > ROTATION_SKIP))
+                if (bounce > ROTATION_SKIP)
                     bounce = 0;
                 else
                     c = 0;
