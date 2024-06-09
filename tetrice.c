@@ -470,7 +470,7 @@ void gameloop()
     // Previous values
     unsigned char px = START_X, py = START_Y, protation = 0;
     // Set start speed
-    unsigned char speed = 20;
+    unsigned char speed = 15;
     // Set start level
     unsigned char level = 1;
     // Set start score to 0
@@ -511,6 +511,10 @@ void gameloop()
         // Piece falls
         if (c == 0 || c == ' ')
         {
+            // No fall in the first lines
+            if (c == ' ' && y < 3)
+                continue;
+
             // Piece has reached the bottom or another piece
             if (collision_bottom(piece, x, y, rotation))
             {
@@ -580,15 +584,17 @@ void gameloop()
         {
             // Anti-bounce checks
             // If the same key is pressed, ignore it for a number of iterations
-            #define LATERAL_SKIP 10
-            #define ROTATION_SKIP 15
+            #define LATERAL_SKIP 40
+            #define ROTATION_SKIP 90
             if (c == prev_c)
             {
                 if (((c == 'O' || c == 'P') && bounce > LATERAL_SKIP) || ((c == 'Z' || c == 'A') && bounce > ROTATION_SKIP))
                     bounce = 0;
                 else
-                    c = 0;
-                bounce++;
+                {
+                    bounce++;
+                    continue;
+                }
             }
             else
             {
@@ -600,8 +606,6 @@ void gameloop()
         // Move piece
         switch (c)
         {
-        case 'X':
-            return;
         case 'O':
             if (collision_left(piece, x, y, rotation) == 0)
                 x--;
