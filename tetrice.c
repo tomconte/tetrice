@@ -497,15 +497,9 @@ void gameloop()
     int_to_string(level, print_str);
     prints(BOUNDS_X2+3, 6, print_str);
 
-    // Set VSYNC mask
-    POKE(R0, 0x95); // VRM
-
     // Loop until game over
     while (1)
     {
-        // VSYNC
-        while (PEEK(R0) & 0x04) {}
-
         // Keep previous position
         px = x;
         py = y;
@@ -586,8 +580,8 @@ void gameloop()
         {
             // Anti-bounce checks
             // If the same key is pressed, ignore it for a number of iterations
-            #define LATERAL_SKIP 1
-            #define ROTATION_SKIP 2
+            #define LATERAL_SKIP 10
+            #define ROTATION_SKIP 15
             if (c == prev_c)
             {
                 if (((c == 'O' || c == 'P') && bounce > LATERAL_SKIP) || ((c == 'Z' || c == 'A') && bounce > ROTATION_SKIP))
