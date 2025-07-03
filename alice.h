@@ -1,3 +1,6 @@
+#ifndef ALICE_H
+#define ALICE_H
+
 /************************************************************/
 /* Alice 32/90                                              */
 /************************************************************/
@@ -12,6 +15,10 @@
 #define R6 0xBF26     // Main Pointer (MP) high
 #define R7 0xBF27     // Main Pointer (MP) low
 #define R0EXEC 0xBF28 // Execute
+
+#define POKE(addr, value) (*((volatile uint8_t *)(addr)) = (value))
+#define PEEK(address) (*((volatile uint8_t *)(address)))
+#define BUSY() while (PEEK(R0) & 0x80) {}
 
 // Color codes
 #define black 0
@@ -31,16 +38,9 @@
 // The table below is organized by columns, and each column is a list of keys.
 // The first 7 elements of each row are the keys, the last one is a 0 sentinel.
 // NB: the position for the 'X' is wrong in the book, it's fixed here.
-uint8_t keys_per_column[8][8] = {
-    {'@', 'H', 'P', 'X', '0', '8', 0 /*(control)*/, 0},
-    {'Q', 'I', 'A', 'Y', '1', '9', '_', 0},
-    {'B', 'J', 'R', 'W', '2', ':', 0 /*(break)*/, 0},
-    {'C', 'K', 'S', '_', '3', 'M', 0 /*(left)*/, 0},
-    {'D', 'L', 'T', '_', '4', ',', 0 /*(right)*/, 0},
-    {'E', '/', 'U', '_', '5', '-', 0 /*(down)*/, 0},
-    {'F', 'N', 'V', 0 /*(enter)*/, '6', '.', 0 /*(up)*/, 0},
-    {'G', 'O', 'Z', ' ', '7', '+', 0 /*(shift)*/, 0},
-};
+extern uint8_t keys_per_column[8][8];
 
 // This is the list of columns to scan, in order.
-uint8_t all_key_columns[] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
+extern uint8_t all_key_columns[8];
+
+#endif // ALICE_H
