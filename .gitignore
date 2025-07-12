@@ -2,3 +2,4 @@ tetrice
 *.k7
 *.wav
 *.o
+*_temp.s
