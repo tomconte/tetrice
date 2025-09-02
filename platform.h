@@ -26,4 +26,6 @@ extern uint8_t timeout_ticks;
 uint8_t wait();
 uint8_t wait_key();
 
+uint8_t platform_random();
+
 #endif // PLATFORM_H

@@ -217,4 +217,10 @@ uint8_t wait_key()
     }
 }
 
+uint8_t platform_random()
+{
+    // 0x0009-0x000A contains the clock value in μs
+    return PEEK(0x000A);
+}
+
 #endif // ALICE

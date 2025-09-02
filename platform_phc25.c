@@ -76,4 +76,10 @@ uint8_t wait_key()
     return 0;
 }
 
+uint8_t platform_random()
+{
+    /* TODO: return a random number */
+    return 0;
+}
+
 #endif // PHC25

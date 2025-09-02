@@ -219,8 +219,7 @@ void int_to_string(uint8_t score, char *str)
 void gameloop()
 {
     // Select a random piece
-    // 0x0009-0x000A contains the clock value in μs
-    unsigned char piece = PEEK(0x000A) % 7;
+    unsigned char piece = platform_random() % 7;
     // Set start position to 0,0
     unsigned char x = START_X;
     unsigned char y = START_Y;
@@ -314,7 +313,7 @@ void gameloop()
                 protation = rotation;
 
                 // Select a random piece
-                piece = PEEK(0x000A) % 7;
+                piece = platform_random() % 7;
 
                 // Set initial timer
                 timeout_ticks = speed;
