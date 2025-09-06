@@ -4,10 +4,6 @@
 #include "platform.h"
 #include "tetromino.h"
 
-// Playfield dimensions
-#define PLAYFIELD_WIDTH 12
-#define PLAYFIELD_HEIGHT 22
-
 // Game state structure
 typedef struct {
     uint8_t playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
@@ -22,12 +18,6 @@ typedef struct {
 // Colors for each tetromino
 char tetrominos_colors[] = {
     yellow, cyan, pink, green, red, blue, orange};
-
-// Playfield bounds etc.
-#define START_X 20
-#define START_Y 2
-#define BOUNDS_X1 15
-#define BOUNDS_X2 26
 
 /************************************************************/
 /* Platform specific functions are implemented elsewhere     */
@@ -170,7 +160,7 @@ uint8_t check_full_lines()
     for (y = 2; y < 24; y++)
     {
         full = 1;
-        for (x = BOUNDS_X1; x <= BOUNDS_X2; x++)
+        for (x = PLAYFIELD_START_X; x <= PLAYFIELD_END_X; x++)
         {
             if (charatxy(x, y) == ' ')
             {
@@ -181,12 +171,12 @@ uint8_t check_full_lines()
         if (full)
         {
             // Erase line
-            for (x = BOUNDS_X1; x <= BOUNDS_X2; x++)
+            for (x = PLAYFIELD_START_X; x <= PLAYFIELD_END_X; x++)
             {
                 printc(x, y, ' ');
             }
             // Move lines down
-            for (x = BOUNDS_X1; x <= BOUNDS_X2; x++)
+            for (x = PLAYFIELD_START_X; x <= PLAYFIELD_END_X; x++)
             {
                 for (z = y; z > 2; z--)
                 {
@@ -247,8 +237,8 @@ void init_game_state(game_state_t* state)
     state->level = 1;
     state->speed = 15;
     state->piece = platform_random() % 7;
-    state->x = START_X;
-    state->y = START_Y;
+    state->x = PIECE_START_X;
+    state->y = PIECE_START_Y;
     state->rotation = 0;
 }
 
@@ -283,11 +273,11 @@ void gameloop()
 
     // Display initial score
     int_to_string(state.score, print_str);
-    prints(BOUNDS_X2+3, 3, print_str);
+    prints(UI_START_X, 3, print_str);
 
     // Display initial level
     int_to_string(state.level, print_str);
-    prints(BOUNDS_X2+3, 6, print_str);
+    prints(UI_START_X, 6, print_str);
 
     // Loop until game over
     while (1)
@@ -330,17 +320,17 @@ void gameloop()
                     // Display score
                     int_to_string(state.score, print_str);
                     color(tetrominos_colors[state.piece], black);
-                    prints(BOUNDS_X2+3, 3, print_str);
+                    prints(UI_START_X, 3, print_str);
 
                     // Display level
                     int_to_string(state.level, print_str);
                     color(tetrominos_colors[state.piece], black);
-                    prints(BOUNDS_X2+3, 6, print_str);
+                    prints(UI_START_X, 6, print_str);
                 }
 
                 // Reset position
-                state.x = START_X;
-                state.y = START_Y;
+                state.x = PIECE_START_X;
+                state.y = PIECE_START_Y;
                 state.rotation = 0;
                 px = state.x;
                 py = state.y;
@@ -357,7 +347,7 @@ void gameloop()
                 {
                     // Game over
                     color(white, black);
-                    prints(BOUNDS_X1+1, 10, "GAME  OVER");
+                    prints(PLAYFIELD_START_X+1, 10, "GAME  OVER");
                     ticks(15);
                     // Wait for key
                     wait_key();
@@ -464,22 +454,22 @@ void main()
         color(magenta, black);
         for (y = 0; y < 23; y++)
         {
-            printcg(BOUNDS_X1 - 1, 2+y, '\x6A');
-            printcg(BOUNDS_X2 + 1, 2+y, '\x55');
+            printcg(PLAYFIELD_START_X - 1, 2+y, '\x6A');
+            printcg(PLAYFIELD_END_X + 1, 2+y, '\x55');
         }
-        prints(BOUNDS_X1 - 1, 24, "\x42\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x41");
-        prints(BOUNDS_X1 - 1, 1, "\x60\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x50");
+        prints(PLAYFIELD_START_X - 1, 24, "\x42\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x41");
+        prints(PLAYFIELD_START_X - 1, 1, "\x60\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x50");
 
         color(white, black);
-        prints(BOUNDS_X2+3, 2, "SCORE");
-        prints(BOUNDS_X2+3, 5, "LEVEL");
+        prints(UI_START_X, 2, "SCORE");
+        prints(UI_START_X, 5, "LEVEL");
 
         // Welcome message and wait to start game
         color(white, black);
-        prints(BOUNDS_X1+1, 10, "PRESS  KEY");
+        prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
         wait_key();
         ticks(5);
-        prints(BOUNDS_X1+1, 10, "          ");
+        prints(PLAYFIELD_START_X+1, 10, "          ");
 
         // Call game loop
         gameloop();

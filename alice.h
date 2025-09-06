@@ -43,4 +43,22 @@ extern uint8_t keys_per_column[8][8];
 // This is the list of columns to scan, in order.
 extern uint8_t all_key_columns[8];
 
+// Screen characteristics for Alice 32/90
+#define SCREEN_WIDTH_CHARS 40
+#define SCREEN_HEIGHT_CHARS 25
+
+// Playfield dimensions
+#define PLAYFIELD_WIDTH 12
+#define PLAYFIELD_HEIGHT 22
+
+// Display layout configuration
+#define PLAYFIELD_START_X 15
+#define PLAYFIELD_START_Y 2
+#define UI_START_X 29              /* Score/Level display position */
+#define PIECE_START_X 20           /* Starting X position for new pieces */
+#define PIECE_START_Y 2            /* Starting Y position for new pieces */
+
+// Derived constants  
+#define PLAYFIELD_END_X (PLAYFIELD_START_X + PLAYFIELD_WIDTH - 1)
+
 #endif // ALICE_H
