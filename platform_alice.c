@@ -223,4 +223,26 @@ uint8_t platform_random()
     return PEEK(0x000A);
 }
 
+input_action_t platform_get_input()
+{
+    uint8_t c = wait();
+    
+    switch (c) {
+        case 'O':
+            return INPUT_MOVE_LEFT;
+        case 'P':
+            return INPUT_MOVE_RIGHT;
+        case 'Z':
+            return INPUT_ROTATE_CW;
+        case 'A':
+            return INPUT_ROTATE_CCW;
+        case ' ':
+            return INPUT_DROP;
+        case 0:
+            return INPUT_TIMEOUT;
+        default:
+            return INPUT_NONE;
+    }
+}
+
 #endif // ALICE

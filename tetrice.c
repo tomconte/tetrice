@@ -235,12 +235,12 @@ void gameloop()
     unsigned char score = 0;
     // Line score
     unsigned char line_score = 0;
-    // Input key
-    unsigned char c;
+    // Input action
+    input_action_t input;
     // Score/level string
     unsigned char print_str[4];
-    // Anti-bounce: previous key
-    unsigned char prev_c = 0;
+    // Anti-bounce: previous input
+    input_action_t prev_input = INPUT_NONE;
     // Anti-bounce: counter
     unsigned char bounce = 0;
 
@@ -263,14 +263,14 @@ void gameloop()
         py = y;
         protation = rotation;
 
-        // Wait for a key
-        c = wait();
+        // Get input action
+        input = platform_get_input();
 
         // Piece falls
-        if (c == 0 || c == ' ')
+        if (input == INPUT_TIMEOUT || input == INPUT_DROP)
         {
             // No fall in the first lines
-            if (c == ' ' && y < 3)
+            if (input == INPUT_DROP && y < 3)
                 continue;
 
             // Piece has reached the bottom or another piece
@@ -341,12 +341,13 @@ void gameloop()
         else
         {
             // Anti-bounce checks
-            // If the same key is pressed, ignore it for a number of iterations
+            // If the same input is pressed, ignore it for a number of iterations
             #define LATERAL_SKIP 40
             #define ROTATION_SKIP 90
-            if (c == prev_c)
+            if (input == prev_input)
             {
-                if (((c == 'O' || c == 'P') && bounce > LATERAL_SKIP) || ((c == 'Z' || c == 'A') && bounce > ROTATION_SKIP))
+                if (((input == INPUT_MOVE_LEFT || input == INPUT_MOVE_RIGHT) && bounce > LATERAL_SKIP) || 
+                    ((input == INPUT_ROTATE_CW || input == INPUT_ROTATE_CCW) && bounce > ROTATION_SKIP))
                     bounce = 0;
                 else
                 {
@@ -356,27 +357,29 @@ void gameloop()
             }
             else
             {
-                prev_c = c;
+                prev_input = input;
                 bounce = 0;
             }
         }
 
         // Move piece
-        switch (c)
+        switch (input)
         {
-        case 'O':
+        case INPUT_MOVE_LEFT:
             if (collision_left(piece, x, y, rotation) == 0)
                 x--;
             break;
-        case 'P':
+        case INPUT_MOVE_RIGHT:
             if (collision_right(piece, x, y, rotation) == 0)
                 x++;
             break;
-        case 'Z':
+        case INPUT_ROTATE_CW:
             rotation = check_rotation(piece, x, y, rotation, 0);
             break;
-        case 'A':
+        case INPUT_ROTATE_CCW:
             rotation = check_rotation(piece, x, y, rotation, 1);
+            break;
+        default:
             break;
         }
 

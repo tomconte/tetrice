@@ -28,4 +28,16 @@ uint8_t wait_key();
 
 uint8_t platform_random();
 
+typedef enum {
+    INPUT_NONE = 0,
+    INPUT_MOVE_LEFT,
+    INPUT_MOVE_RIGHT,
+    INPUT_ROTATE_CW,
+    INPUT_ROTATE_CCW,
+    INPUT_DROP,
+    INPUT_TIMEOUT
+} input_action_t;
+
+input_action_t platform_get_input();
+
 #endif // PLATFORM_H
