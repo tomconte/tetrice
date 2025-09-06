@@ -4,6 +4,21 @@
 #include "platform.h"
 #include "tetromino.h"
 
+// Playfield dimensions
+#define PLAYFIELD_WIDTH 12
+#define PLAYFIELD_HEIGHT 22
+
+// Game state structure
+typedef struct {
+    uint8_t playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
+    uint8_t score;
+    uint8_t level;
+    uint8_t speed;
+    uint8_t piece;
+    uint8_t x, y;
+    uint8_t rotation;
+} game_state_t;
+
 // Colors for each tetromino
 char tetrominos_colors[] = {
     yellow, cyan, pink, green, red, blue, orange};
@@ -213,55 +228,74 @@ void int_to_string(uint8_t score, char *str)
 }
 
 /************************************************************/
+/* Game state initialization                                */
+/************************************************************/
+
+void init_game_state(game_state_t* state)
+{
+    uint8_t x, y;
+    
+    // Clear playfield
+    for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
+        for (x = 0; x < PLAYFIELD_WIDTH; x++) {
+            state->playfield[y][x] = 0;
+        }
+    }
+    
+    // Initialize game variables
+    state->score = 0;
+    state->level = 1;
+    state->speed = 15;
+    state->piece = platform_random() % 7;
+    state->x = START_X;
+    state->y = START_Y;
+    state->rotation = 0;
+}
+
+/************************************************************/
 /* Game loop                                                */
 /************************************************************/
 
 void gameloop()
 {
-    // Select a random piece
-    unsigned char piece = platform_random() % 7;
-    // Set start position to 0,0
-    unsigned char x = START_X;
-    unsigned char y = START_Y;
-    // Set start rotation to 0
-    unsigned char rotation = 0;
-    // Previous values
-    unsigned char px = START_X, py = START_Y, protation = 0;
-    // Set start speed
-    unsigned char speed = 15;
-    // Set start level
-    unsigned char level = 1;
-    // Set start score to 0
-    unsigned char score = 0;
-    // Line score
-    unsigned char line_score = 0;
-    // Input action
+    // All variable declarations must be at the top for C89 compatibility
+    game_state_t state;
+    unsigned char px, py, protation;
+    unsigned char line_score;
     input_action_t input;
-    // Score/level string
     unsigned char print_str[4];
-    // Anti-bounce: previous input
-    input_action_t prev_input = INPUT_NONE;
-    // Anti-bounce: counter
-    unsigned char bounce = 0;
+    input_action_t prev_input;
+    unsigned char bounce;
+    
+    // Initialize game state
+    init_game_state(&state);
+    
+    // Initialize other variables
+    px = state.x;
+    py = state.y;
+    protation = 0;
+    line_score = 0;
+    prev_input = INPUT_NONE;
+    bounce = 0;
 
     // Set initial timer
-    timeout_ticks = speed;
+    timeout_ticks = state.speed;
 
     // Display initial score
-    int_to_string(score, print_str);
+    int_to_string(state.score, print_str);
     prints(BOUNDS_X2+3, 3, print_str);
 
     // Display initial level
-    int_to_string(level, print_str);
+    int_to_string(state.level, print_str);
     prints(BOUNDS_X2+3, 6, print_str);
 
     // Loop until game over
     while (1)
     {
         // Keep previous position
-        px = x;
-        py = y;
-        protation = rotation;
+        px = state.x;
+        py = state.y;
+        protation = state.rotation;
 
         // Get input action
         input = platform_get_input();
@@ -270,11 +304,11 @@ void gameloop()
         if (input == INPUT_TIMEOUT || input == INPUT_DROP)
         {
             // No fall in the first lines
-            if (input == INPUT_DROP && y < 3)
+            if (input == INPUT_DROP && state.y < 3)
                 continue;
 
             // Piece has reached the bottom or another piece
-            if (collision_bottom(piece, x, y, rotation))
+            if (collision_bottom(state.piece, state.x, state.y, state.rotation))
             {
                 // Check for full lines
                 line_score = check_full_lines();
@@ -283,43 +317,43 @@ void gameloop()
                     // Accelerate speed every 10 points
                     // The score can increase by more than 1 point
                     // so we need to check if the score passed a multiple of 10
-                    if ((score / 10) != ((score + line_score) / 10))
+                    if ((state.score / 10) != ((state.score + line_score) / 10))
                     {
-                        level++;
-                        if (speed > 1)
-                            speed -= 1;
+                        state.level++;
+                        if (state.speed > 1)
+                            state.speed -= 1;
                     }
 
                     // Update score
-                    score += line_score;
+                    state.score += line_score;
 
                     // Display score
-                    int_to_string(score, print_str);
-                    color(tetrominos_colors[piece], black);
+                    int_to_string(state.score, print_str);
+                    color(tetrominos_colors[state.piece], black);
                     prints(BOUNDS_X2+3, 3, print_str);
 
                     // Display level
-                    int_to_string(level, print_str);
-                    color(tetrominos_colors[piece], black);
+                    int_to_string(state.level, print_str);
+                    color(tetrominos_colors[state.piece], black);
                     prints(BOUNDS_X2+3, 6, print_str);
                 }
 
                 // Reset position
-                x = START_X;
-                y = START_Y;
-                rotation = 0;
-                px = x;
-                py = y;
-                protation = rotation;
+                state.x = START_X;
+                state.y = START_Y;
+                state.rotation = 0;
+                px = state.x;
+                py = state.y;
+                protation = state.rotation;
 
                 // Select a random piece
-                piece = platform_random() % 7;
+                state.piece = platform_random() % 7;
 
                 // Set initial timer
-                timeout_ticks = speed;
+                timeout_ticks = state.speed;
 
                 // Check for game over
-                if (collision_bottom(piece, x, y, rotation))
+                if (collision_bottom(state.piece, state.x, state.y, state.rotation))
                 {
                     // Game over
                     color(white, black);
@@ -335,8 +369,8 @@ void gameloop()
                 continue;
             }
             // Move piece down
-            y++;
-            timeout_ticks = speed;
+            state.y++;
+            timeout_ticks = state.speed;
         }
         else
         {
@@ -366,28 +400,28 @@ void gameloop()
         switch (input)
         {
         case INPUT_MOVE_LEFT:
-            if (collision_left(piece, x, y, rotation) == 0)
-                x--;
+            if (collision_left(state.piece, state.x, state.y, state.rotation) == 0)
+                state.x--;
             break;
         case INPUT_MOVE_RIGHT:
-            if (collision_right(piece, x, y, rotation) == 0)
-                x++;
+            if (collision_right(state.piece, state.x, state.y, state.rotation) == 0)
+                state.x++;
             break;
         case INPUT_ROTATE_CW:
-            rotation = check_rotation(piece, x, y, rotation, 0);
+            state.rotation = check_rotation(state.piece, state.x, state.y, state.rotation, 0);
             break;
         case INPUT_ROTATE_CCW:
-            rotation = check_rotation(piece, x, y, rotation, 1);
+            state.rotation = check_rotation(state.piece, state.x, state.y, state.rotation, 1);
             break;
         default:
             break;
         }
 
         // Erase piece
-        erase_piece(piece, px, py, protation);
+        erase_piece(state.piece, px, py, protation);
 
         // Display piece
-        display_piece(piece, x, y, rotation);
+        display_piece(state.piece, state.x, state.y, state.rotation);
     }
 }
 
