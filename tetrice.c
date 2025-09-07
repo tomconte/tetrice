@@ -36,14 +36,14 @@ uint8_t timeout_ticks = 0;
 // Place a piece in the playfield
 void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
 {
-    tetromino *tetromino = tetrominos[piece][rotation];
+    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     unsigned char i;
     unsigned char px, py;
     
     for (i = 0; i < 4; i++)
     {
-        px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
-        py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
+        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
         playfield_set_cell(state, px, py, CELL_PIECE_1 + piece);
     }
 }
@@ -52,14 +52,14 @@ void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned ch
 // Remove a piece from the playfield
 void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
 {
-    tetromino *tetromino = tetrominos[piece][rotation];
+    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     unsigned char i;
     unsigned char px, py;
     
     for (i = 0; i < 4; i++)
     {
-        px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
-        py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
+        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
         playfield_set_cell(state, px, py, CELL_EMPTY);
     }
 }
@@ -68,16 +68,16 @@ void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned c
 // Detect collision left
 uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
-    tetromino *tetromino = tetrominos[piece][rotation];
+    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     uint8_t i;
     uint8_t px, py;
 
     for (i = 0; i < 4; i++)
     {
-        if ((*tetromino)[i][2] & SIDE_LEFT)
+        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_LEFT)
         {
-            px = x + (*tetromino)[i][0] - 1 - PLAYFIELD_START_X;
-            py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+            px = x + GET_BLOCK_X((*tetromino)[i]) - 1 - PLAYFIELD_START_X;
+            py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
             
             if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
                 return 1;
@@ -90,16 +90,16 @@ uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
 // Detect collision right
 uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
-    tetromino *tetromino = tetrominos[piece][rotation];
+    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     uint8_t i;
     uint8_t px, py;
 
     for (i = 0; i < 4; i++)
     {
-        if ((*tetromino)[i][2] & SIDE_RIGHT)
+        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_RIGHT)
         {
-            px = x + (*tetromino)[i][0] + 1 - PLAYFIELD_START_X;
-            py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+            px = x + GET_BLOCK_X((*tetromino)[i]) + 1 - PLAYFIELD_START_X;
+            py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
             
             if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
                 return 1;
@@ -112,16 +112,16 @@ uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y
 // Detect collision bottom
 uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
-    tetromino *tetromino = tetrominos[piece][rotation];
+    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     uint8_t i;
     uint8_t px, py;
 
     for (i = 0; i < 4; i++)
     {
-        if ((*tetromino)[i][2] & SIDE_BOTTOM)
+        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_BOTTOM)
         {
-            px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
-            py = y + (*tetromino)[i][1] + 1 - PLAYFIELD_START_Y;
+            px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
+            py = y + GET_BLOCK_Y((*tetromino)[i]) + 1 - PLAYFIELD_START_Y;
             
             if (py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
                 return 1;
@@ -135,7 +135,7 @@ uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t 
 uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t direction)
 {
     uint8_t new_rotation;
-    tetromino *tetromino;
+    packed_tetromino *tetromino;
     uint8_t i;
     uint8_t px, py;
 
@@ -159,11 +159,11 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
     }
 
     // Check collision
-    tetromino = tetrominos[piece][new_rotation];
+    tetromino = GET_TETROMINO(piece, new_rotation);
     for (i = 0; i < 4; i++)
     {
-        px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
-        py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
+        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
         
         if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
         {
