@@ -256,61 +256,36 @@ input_action_t platform_get_input()
 
 void display_sync_playfield(game_state_t* state)
 {
-    uint8_t x, y;
-    uint8_t cell;
-    char display_char;
+    uint8_t x, y, cell;
     
-    // Clear playfield area first
-    color(black, black);
-    for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
-        for (x = 0; x < PLAYFIELD_WIDTH; x++) {
-            printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, ' ');
-        }
-    }
-    
-    // Draw static pieces from playfield
     for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
         for (x = 0; x < PLAYFIELD_WIDTH; x++) {
             cell = state->playfield[y][x];
             if (cell != CELL_EMPTY) {
-                display_char = '\x7F';
-                // Map abstract cell type to Alice color
                 color(tetrominos_colors[cell - CELL_PIECE_1], black);
-                printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, display_char);
+                printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, '\x7F');
+            } else {
+                color(black, black);
+                printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, ' ');
             }
         }
     }
 }
 
-void display_sync_current_piece(game_state_t* state)
-{
-    // We need access to tetromino data - declare external
-    extern void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
-    
-    // Display the current falling piece
-    display_piece(state->piece, state->x, state->y, state->rotation);
-}
 
 void display_sync_ui(game_state_t* state)
 {
     char print_str[4];
-    
-    // Convert int to string helper (copied from tetrice.c)
-    print_str[0] = '0' + (state->score / 100);
-    print_str[1] = '0' + ((state->score % 100) / 10);
-    print_str[2] = '0' + (state->score % 10);
-    print_str[3] = '\0';
+    extern void int_to_string(uint8_t score, char *str);
     
     color(white, black);
+    
+    // Display score
+    int_to_string(state->score, print_str);
     prints(UI_START_X, 3, print_str);
     
-    // Level
-    print_str[0] = '0' + (state->level / 100);
-    print_str[1] = '0' + ((state->level % 100) / 10);
-    print_str[2] = '0' + (state->level % 10);
-    print_str[3] = '\0';
-    
-    color(white, black);
+    // Display level
+    int_to_string(state->level, print_str);
     prints(UI_START_X, 6, print_str);
 }
 

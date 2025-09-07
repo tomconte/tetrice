@@ -18,8 +18,6 @@ uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t 
 uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t direction);
 uint8_t check_full_lines(game_state_t* state);
 void init_game_state(game_state_t* state);
-void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
-void erase_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
 
 // External reference to platform-specific color mapping
 extern char tetrominos_colors[];
@@ -50,17 +48,6 @@ void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned ch
     }
 }
 
-// Display a piece (for rendering)
-void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
-{
-    tetromino *tetromino = tetrominos[piece][rotation];
-    unsigned char i;
-    color(tetrominos_colors[piece], black);
-    for (i = 0; i < 4; i++)
-    {
-        printc(x + (*tetromino)[i][0], y + (*tetromino)[i][1], '\x7F');
-    }
-}
 
 // Remove a piece from the playfield
 void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
@@ -77,17 +64,6 @@ void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned c
     }
 }
 
-// Erase a piece (for rendering)
-void erase_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
-{
-    tetromino *tetromino = tetrominos[piece][rotation];
-    unsigned char i;
-    color(black, black);
-    for (i = 0; i < 4; i++)
-    {
-        printc(x + (*tetromino)[i][0], y + (*tetromino)[i][1], ' ');
-    }
-}
 
 // Detect collision left
 uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
@@ -165,9 +141,6 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
 
     // Remove piece from playfield
     playfield_remove_piece(state, piece, x, y, rotation);
-    
-    // Also erase from display
-    erase_piece(piece, x, y, rotation);
 
     // Rotate piece
     if (direction == 0)
@@ -194,10 +167,8 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
         
         if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
         {
-            // Collision
-            // Restore piece in playfield and display
+            // Collision - restore piece in playfield
             playfield_place_piece(state, piece, x, y, rotation);
-            display_piece(piece, x, y, rotation);
             return rotation;
         }
     }
@@ -349,6 +320,9 @@ void gameloop()
     // Initialize game state
     init_game_state(&state);
     
+    // Place initial piece in playfield
+    playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
+    
     // Initialize other variables
     px = state.x;
     py = state.y;
@@ -362,6 +336,7 @@ void gameloop()
 
     // Initial display sync
     display_sync_ui(&state);
+    display_sync_playfield(&state);
 
     // Loop until game over
     while (1)
@@ -371,6 +346,9 @@ void gameloop()
         py = state.y;
         protation = state.rotation;
 
+        // Remove piece from playfield before any movement checks
+        playfield_remove_piece(&state, state.piece, state.x, state.y, state.rotation);
+
         // Get input action
         input = platform_get_input();
 
@@ -378,13 +356,16 @@ void gameloop()
         if (input == INPUT_TIMEOUT || input == INPUT_DROP)
         {
             // No fall in the first lines
-            if (input == INPUT_DROP && state.y < 3)
+            if (input == INPUT_DROP && state.y < 3) {
+                // Restore piece and continue
+                playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
                 continue;
+            }
 
             // Piece has reached the bottom or another piece
             if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
             {
-                // Place piece in playfield permanently
+                // Piece has landed - restore it in current position
                 playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
                 // Check for full lines
                 line_score = check_full_lines(&state);
@@ -422,7 +403,7 @@ void gameloop()
                 // Set initial timer
                 timeout_ticks = state.speed;
 
-                // Check for game over
+                // Check for game over (before placing new piece)
                 if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
                 {
                     // Game over
@@ -435,12 +416,17 @@ void gameloop()
                     return;
                 }
 
+                // Place new piece in playfield
+                playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
+
                 // Continue loop
                 continue;
             }
             // Move piece down
             state.y++;
             timeout_ticks = state.speed;
+            // Place piece in new position
+            playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
         }
         else
         {
@@ -487,9 +473,11 @@ void gameloop()
             break;
         }
 
-        // Sync entire display
+        // Place piece in new position after movement
+        playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
+
+        // Sync entire display (includes the piece)
         display_sync_playfield(&state);
-        display_sync_current_piece(&state);
     }
 }
 

@@ -33,7 +33,6 @@ typedef struct {
 
 /* Display Sync API - declared here since they need the complete game_state_t definition */
 void display_sync_playfield(game_state_t* state);
-void display_sync_current_piece(game_state_t* state);
 void display_sync_ui(game_state_t* state);
 void display_clear_screen();
 void display_draw_borders();
