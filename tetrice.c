@@ -3,21 +3,27 @@
 
 #include "platform.h"
 #include "tetromino.h"
+#include "game_state.h"
 
-// Game state structure
-typedef struct {
-    uint8_t playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
-    uint8_t score;
-    uint8_t level;
-    uint8_t speed;
-    uint8_t piece;
-    uint8_t x, y;
-    uint8_t rotation;
-} game_state_t;
+// Function declarations
+void playfield_set_cell(game_state_t* state, uint8_t x, uint8_t y, uint8_t color);
+uint8_t playfield_get_cell(game_state_t* state, uint8_t x, uint8_t y);
+uint8_t playfield_is_empty_cell(game_state_t* state, uint8_t x, uint8_t y);
+void playfield_clear(game_state_t* state);
+void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
+void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
+uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
+uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
+uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
+uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t direction);
+uint8_t check_full_lines(game_state_t* state);
+void init_game_state(game_state_t* state);
+void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
+void erase_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
 
-// Colors for each tetromino
-char tetrominos_colors[] = {
-    yellow, cyan, pink, green, red, blue, orange};
+// External reference to platform-specific color mapping
+extern char tetrominos_colors[];
+
 
 /************************************************************/
 /* Platform specific functions are implemented elsewhere     */
@@ -29,7 +35,22 @@ uint8_t timeout_ticks = 0;
 /* Pieces                                                   */
 /************************************************************/
 
-// Display a piece
+// Place a piece in the playfield
+void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
+{
+    tetromino *tetromino = tetrominos[piece][rotation];
+    unsigned char i;
+    unsigned char px, py;
+    
+    for (i = 0; i < 4; i++)
+    {
+        px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
+        py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+        playfield_set_cell(state, px, py, CELL_PIECE_1 + piece);
+    }
+}
+
+// Display a piece (for rendering)
 void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
 {
     tetromino *tetromino = tetrominos[piece][rotation];
@@ -41,7 +62,22 @@ void display_piece(unsigned char piece, unsigned char x, unsigned char y, unsign
     }
 }
 
-// Erase a piece
+// Remove a piece from the playfield
+void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
+{
+    tetromino *tetromino = tetrominos[piece][rotation];
+    unsigned char i;
+    unsigned char px, py;
+    
+    for (i = 0; i < 4; i++)
+    {
+        px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
+        py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+        playfield_set_cell(state, px, py, CELL_EMPTY);
+    }
+}
+
+// Erase a piece (for rendering)
 void erase_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation)
 {
     tetromino *tetromino = tetrominos[piece][rotation];
@@ -54,16 +90,20 @@ void erase_piece(unsigned char piece, unsigned char x, unsigned char y, unsigned
 }
 
 // Detect collision left
-uint8_t collision_left(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
     tetromino *tetromino = tetrominos[piece][rotation];
     uint8_t i;
+    uint8_t px, py;
 
     for (i = 0; i < 4; i++)
     {
         if ((*tetromino)[i][2] & SIDE_LEFT)
         {
-            if (charatxy(x + (*tetromino)[i][0] - 1, y + (*tetromino)[i][1]) != ' ')
+            px = x + (*tetromino)[i][0] - 1 - PLAYFIELD_START_X;
+            py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+            
+            if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
     }
@@ -72,16 +112,20 @@ uint8_t collision_left(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 }
 
 // Detect collision right
-uint8_t collision_right(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
     tetromino *tetromino = tetrominos[piece][rotation];
     uint8_t i;
+    uint8_t px, py;
 
     for (i = 0; i < 4; i++)
     {
         if ((*tetromino)[i][2] & SIDE_RIGHT)
         {
-            if (charatxy(x + (*tetromino)[i][0] + 1, y + (*tetromino)[i][1]) != ' ')
+            px = x + (*tetromino)[i][0] + 1 - PLAYFIELD_START_X;
+            py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+            
+            if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
     }
@@ -90,16 +134,20 @@ uint8_t collision_right(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 }
 
 // Detect collision bottom
-uint8_t collision_bottom(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
     tetromino *tetromino = tetrominos[piece][rotation];
     uint8_t i;
+    uint8_t px, py;
 
     for (i = 0; i < 4; i++)
     {
         if ((*tetromino)[i][2] & SIDE_BOTTOM)
         {
-            if (charatxy(x + (*tetromino)[i][0], y + (*tetromino)[i][1] + 1) != ' ')
+            px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
+            py = y + (*tetromino)[i][1] + 1 - PLAYFIELD_START_Y;
+            
+            if (py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
     }
@@ -108,13 +156,17 @@ uint8_t collision_bottom(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 }
 
 // Check if a piece can rotate by checking collisions
-uint8_t check_rotation(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t direction)
+uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t direction)
 {
     uint8_t new_rotation;
     tetromino *tetromino;
     uint8_t i;
+    uint8_t px, py;
 
-    // Erase piece
+    // Remove piece from playfield
+    playfield_remove_piece(state, piece, x, y, rotation);
+    
+    // Also erase from display
     erase_piece(piece, x, y, rotation);
 
     // Rotate piece
@@ -137,10 +189,14 @@ uint8_t check_rotation(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, ui
     tetromino = tetrominos[piece][new_rotation];
     for (i = 0; i < 4; i++)
     {
-        if (charatxy(x + (*tetromino)[i][0], y + (*tetromino)[i][1]) != ' ')
+        px = x + (*tetromino)[i][0] - PLAYFIELD_START_X;
+        py = y + (*tetromino)[i][1] - PLAYFIELD_START_Y;
+        
+        if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
         {
             // Collision
-            // Restore piece
+            // Restore piece in playfield and display
+            playfield_place_piece(state, piece, x, y, rotation);
             display_piece(piece, x, y, rotation);
             return rotation;
         }
@@ -151,18 +207,18 @@ uint8_t check_rotation(uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, ui
 }
 
 // Check full lines and return score
-uint8_t check_full_lines()
+uint8_t check_full_lines(game_state_t* state)
 {
     uint8_t x, y, z;
     uint8_t full;
     uint8_t nlines = 0;
 
-    for (y = 2; y < 24; y++)
+    for (y = 0; y < PLAYFIELD_HEIGHT; y++)
     {
         full = 1;
-        for (x = PLAYFIELD_START_X; x <= PLAYFIELD_END_X; x++)
+        for (x = 0; x < PLAYFIELD_WIDTH; x++)
         {
-            if (charatxy(x, y) == ' ')
+            if (playfield_is_empty_cell(state, x, y))
             {
                 full = 0;
                 break;
@@ -170,20 +226,28 @@ uint8_t check_full_lines()
         }
         if (full)
         {
-            // Erase line
-            for (x = PLAYFIELD_START_X; x <= PLAYFIELD_END_X; x++)
+            // Clear line in playfield
+            for (x = 0; x < PLAYFIELD_WIDTH; x++)
             {
-                printc(x, y, ' ');
+                playfield_set_cell(state, x, y, CELL_EMPTY);
             }
-            // Move lines down
-            for (x = PLAYFIELD_START_X; x <= PLAYFIELD_END_X; x++)
+            // Move lines down in playfield
+            for (z = y; z > 0; z--)
             {
-                for (z = y; z > 2; z--)
+                for (x = 0; x < PLAYFIELD_WIDTH; x++)
                 {
-                    printc(x, z, charatxy(x, z - 1));
+                    uint8_t cell_above = playfield_get_cell(state, x, z - 1);
+                    playfield_set_cell(state, x, z, cell_above);
                 }
             }
-            // Increment nulber of lines
+            // Clear top line
+            for (x = 0; x < PLAYFIELD_WIDTH; x++)
+            {
+                playfield_set_cell(state, x, 0, CELL_EMPTY);
+            }
+            
+            
+            // Increment number of lines
             nlines++;
         }
     }
@@ -218,19 +282,45 @@ void int_to_string(uint8_t score, char *str)
 }
 
 /************************************************************/
+/* Playfield Operations API                                 */
+/************************************************************/
+
+void playfield_set_cell(game_state_t* state, uint8_t x, uint8_t y, uint8_t color)
+{
+    if (x < PLAYFIELD_WIDTH && y < PLAYFIELD_HEIGHT)
+        state->playfield[y][x] = color;
+}
+
+uint8_t playfield_get_cell(game_state_t* state, uint8_t x, uint8_t y)
+{
+    if (x < PLAYFIELD_WIDTH && y < PLAYFIELD_HEIGHT)
+        return state->playfield[y][x];
+    return 0;
+}
+
+uint8_t playfield_is_empty_cell(game_state_t* state, uint8_t x, uint8_t y)
+{
+    return playfield_get_cell(state, x, y) == CELL_EMPTY;
+}
+
+void playfield_clear(game_state_t* state)
+{
+    uint8_t x, y;
+    for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
+        for (x = 0; x < PLAYFIELD_WIDTH; x++) {
+            state->playfield[y][x] = CELL_EMPTY;
+        }
+    }
+}
+
+/************************************************************/
 /* Game state initialization                                */
 /************************************************************/
 
 void init_game_state(game_state_t* state)
 {
-    uint8_t x, y;
-    
     // Clear playfield
-    for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
-        for (x = 0; x < PLAYFIELD_WIDTH; x++) {
-            state->playfield[y][x] = 0;
-        }
-    }
+    playfield_clear(state);
     
     // Initialize game variables
     state->score = 0;
@@ -253,7 +343,6 @@ void gameloop()
     unsigned char px, py, protation;
     unsigned char line_score;
     input_action_t input;
-    unsigned char print_str[4];
     input_action_t prev_input;
     unsigned char bounce;
     
@@ -271,13 +360,8 @@ void gameloop()
     // Set initial timer
     timeout_ticks = state.speed;
 
-    // Display initial score
-    int_to_string(state.score, print_str);
-    prints(UI_START_X, 3, print_str);
-
-    // Display initial level
-    int_to_string(state.level, print_str);
-    prints(UI_START_X, 6, print_str);
+    // Initial display sync
+    display_sync_ui(&state);
 
     // Loop until game over
     while (1)
@@ -298,10 +382,12 @@ void gameloop()
                 continue;
 
             // Piece has reached the bottom or another piece
-            if (collision_bottom(state.piece, state.x, state.y, state.rotation))
+            if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
             {
+                // Place piece in playfield permanently
+                playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
                 // Check for full lines
-                line_score = check_full_lines();
+                line_score = check_full_lines(&state);
                 if (line_score > 0)
                 {
                     // Accelerate speed every 10 points
@@ -317,15 +403,9 @@ void gameloop()
                     // Update score
                     state.score += line_score;
 
-                    // Display score
-                    int_to_string(state.score, print_str);
-                    color(tetrominos_colors[state.piece], black);
-                    prints(UI_START_X, 3, print_str);
-
-                    // Display level
-                    int_to_string(state.level, print_str);
-                    color(tetrominos_colors[state.piece], black);
-                    prints(UI_START_X, 6, print_str);
+                    // Sync UI and playfield display after line clearing
+                    display_sync_playfield(&state);
+                    display_sync_ui(&state);
                 }
 
                 // Reset position
@@ -343,7 +423,7 @@ void gameloop()
                 timeout_ticks = state.speed;
 
                 // Check for game over
-                if (collision_bottom(state.piece, state.x, state.y, state.rotation))
+                if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
                 {
                     // Game over
                     color(white, black);
@@ -390,28 +470,26 @@ void gameloop()
         switch (input)
         {
         case INPUT_MOVE_LEFT:
-            if (collision_left(state.piece, state.x, state.y, state.rotation) == 0)
+            if (collision_left(&state, state.piece, state.x, state.y, state.rotation) == 0)
                 state.x--;
             break;
         case INPUT_MOVE_RIGHT:
-            if (collision_right(state.piece, state.x, state.y, state.rotation) == 0)
+            if (collision_right(&state, state.piece, state.x, state.y, state.rotation) == 0)
                 state.x++;
             break;
         case INPUT_ROTATE_CW:
-            state.rotation = check_rotation(state.piece, state.x, state.y, state.rotation, 0);
+            state.rotation = check_rotation(&state, state.piece, state.x, state.y, state.rotation, 0);
             break;
         case INPUT_ROTATE_CCW:
-            state.rotation = check_rotation(state.piece, state.x, state.y, state.rotation, 1);
+            state.rotation = check_rotation(&state, state.piece, state.x, state.y, state.rotation, 1);
             break;
         default:
             break;
         }
 
-        // Erase piece
-        erase_piece(state.piece, px, py, protation);
-
-        // Display piece
-        display_piece(state.piece, state.x, state.y, state.rotation);
+        // Sync entire display
+        display_sync_playfield(&state);
+        display_sync_current_piece(&state);
     }
 }
 
@@ -421,48 +499,11 @@ void gameloop()
 
 void main()
 {
-    unsigned char y;
-
     while (1)
     {
-
-        // Clear screen
-        color(white, black);
-        for (y = 0; y < 25; y++)
-        {
-            prints(0, y, "                                        ");
-        }
-
-        // Print message
-        color(yellow, black);
-        prints(9, 0, "Tetris + Alice = TETRICE");
-
-        // Title
-        color(yellow, black);
-        printsg(0, 2, "\x6b\x41\x77\x41\x6b\x41\x66\x55\x55\x57\x41\x77\x41");
-        printsg(0, 3, "\x4a\x40\x4d\x44\x4a\x40\x45\x45\x45\x4d\x44\x4d\x44");
-
-        // Instructions
-        color(pink, black);
-        prints(2, 11, "O: LEFT");
-        prints(2, 12, "P: RIGHT");
-        prints(2, 13, "Z: ROTATE");
-        prints(2, 14, "A: UNROTATE");
-        prints(2, 15, "SPACE: DROP");
-
-        // Draw background
-        color(magenta, black);
-        for (y = 0; y < 23; y++)
-        {
-            printcg(PLAYFIELD_START_X - 1, 2+y, '\x6A');
-            printcg(PLAYFIELD_END_X + 1, 2+y, '\x55');
-        }
-        prints(PLAYFIELD_START_X - 1, 24, "\x42\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x41");
-        prints(PLAYFIELD_START_X - 1, 1, "\x60\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x50");
-
-        color(white, black);
-        prints(UI_START_X, 2, "SCORE");
-        prints(UI_START_X, 5, "LEVEL");
+        // Clear screen and draw borders
+        display_clear_screen();
+        display_draw_borders();
 
         // Welcome message and wait to start game
         color(white, black);
