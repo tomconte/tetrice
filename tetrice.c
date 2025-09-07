@@ -259,13 +259,13 @@ void int_to_string(uint8_t score, char *str)
 void playfield_set_cell(game_state_t* state, uint8_t x, uint8_t y, uint8_t color)
 {
     if (x < PLAYFIELD_WIDTH && y < PLAYFIELD_HEIGHT)
-        state->playfield[y][x] = color;
+        SET_CELL_CONTENT_AND_DIRTY(state->playfield[y][x], color);
 }
 
 uint8_t playfield_get_cell(game_state_t* state, uint8_t x, uint8_t y)
 {
     if (x < PLAYFIELD_WIDTH && y < PLAYFIELD_HEIGHT)
-        return state->playfield[y][x];
+        return GET_CELL_CONTENT(state->playfield[y][x]);
     return 0;
 }
 
@@ -279,7 +279,7 @@ void playfield_clear(game_state_t* state)
     uint8_t x, y;
     for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
         for (x = 0; x < PLAYFIELD_WIDTH; x++) {
-            state->playfield[y][x] = CELL_EMPTY;
+            SET_CELL_CONTENT_AND_DIRTY(state->playfield[y][x], CELL_EMPTY);
         }
     }
 }
@@ -430,10 +430,10 @@ void gameloop()
         }
         else
         {
-            // Anti-bounce checks
+            // Anti-bounce checks (reduced for optimized game loop)
             // If the same input is pressed, ignore it for a number of iterations
-            #define LATERAL_SKIP 40
-            #define ROTATION_SKIP 90
+            #define LATERAL_SKIP 20
+            #define ROTATION_SKIP 35
             if (input == prev_input)
             {
                 if (((input == INPUT_MOVE_LEFT || input == INPUT_MOVE_RIGHT) && bounce > LATERAL_SKIP) || 

@@ -256,17 +256,26 @@ input_action_t platform_get_input()
 
 void display_sync_playfield(game_state_t* state)
 {
-    uint8_t x, y, cell;
+    uint8_t x, y, cell_data, cell_content;
     
     for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
         for (x = 0; x < PLAYFIELD_WIDTH; x++) {
-            cell = state->playfield[y][x];
-            if (cell != CELL_EMPTY) {
-                color(tetrominos_colors[cell - CELL_PIECE_1], black);
-                printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, '\x7F');
-            } else {
-                color(black, black);
-                printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, ' ');
+            cell_data = state->playfield[y][x];
+            
+            // Only redraw cells that are marked dirty
+            if (GET_CELL_DIRTY(cell_data)) {
+                cell_content = GET_CELL_CONTENT(cell_data);
+                
+                if (cell_content != CELL_EMPTY) {
+                    color(tetrominos_colors[cell_content - CELL_PIECE_1], black);
+                    printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, '\x7F');
+                } else {
+                    color(black, black);
+                    printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, ' ');
+                }
+                
+                // Clear dirty flag after redraw
+                CLEAR_CELL_DIRTY(state->playfield[y][x]);
             }
         }
     }
