@@ -29,8 +29,6 @@ tetromino tetromino_O = {
 
 tetromino *tetromino_O_shapes[] = {&tetromino_O};
 
-uint8_t tetromino_O_widths[] = {2};
-
 /*
 * XXXX
 */
@@ -55,8 +53,6 @@ tetromino tetromino_I_2 = {
 };
 
 tetromino *tetromino_I_shapes[] = {&tetromino_I_1, &tetromino_I_2};
-
-uint8_t tetromino_I_widths[] = {4, 1};
 
 /*
 * XXX
@@ -105,8 +101,6 @@ tetromino tetromino_T_4 = {
     {1, 1, SIDE_RIGHT | SIDE_BOTTOM}
 };
 
-uint8_t tetromino_T_widths[] = {3, 2, 3, 2};
-
 tetromino *tetromino_T_shapes[] = {&tetromino_T_1, &tetromino_T_2, &tetromino_T_3, &tetromino_T_4};
 
 /*
@@ -134,8 +128,6 @@ tetromino tetromino_S_2 = {
 
 tetromino *tetromino_S_shapes[] = {&tetromino_S_1, &tetromino_S_2};
 
-uint8_t tetromino_S_widths[] = {3, 2};
-
 /*
 * XX
 *  XX
@@ -160,8 +152,6 @@ tetromino tetromino_Z_2 = {
 };
 
 tetromino *tetromino_Z_shapes[] = {&tetromino_Z_1, &tetromino_Z_2};
-
-uint8_t tetromino_Z_widths[] = {3, 2};
 
 /*
 *  X
@@ -211,8 +201,6 @@ tetromino tetromino_J_4 = {
 
 tetromino *tetromino_J_shapes[] = {&tetromino_J_1, &tetromino_J_2, &tetromino_J_3, &tetromino_J_4};
 
-uint8_t tetromino_J_widths[] = {2, 3, 2, 3};
-
 /*
 * XX
 *  X
@@ -261,8 +249,6 @@ tetromino tetromino_L_4 = {
 
 tetromino *tetromino_L_shapes[] = {&tetromino_L_1, &tetromino_L_2, &tetromino_L_3, &tetromino_L_4};
 
-uint8_t tetromino_L_widths[] = {2, 3, 2, 3};
-
 // All tetrominos gathered in one array
 tetromino **tetrominos[] = {
     tetromino_O_shapes,
@@ -272,16 +258,6 @@ tetromino **tetrominos[] = {
     tetromino_Z_shapes,
     tetromino_J_shapes,
     tetromino_L_shapes};
-
-// All widths
-uint8_t *tetrominos_widths[] = {
-    tetromino_O_widths,
-    tetromino_I_widths,
-    tetromino_T_widths,
-    tetromino_S_widths,
-    tetromino_Z_widths,
-    tetromino_J_widths,
-    tetromino_L_widths};
 
 // Number of rotations shapes per tetromino
 char tetrominos_nb_shapes[] = {1, 2, 4, 2, 2, 4, 4};

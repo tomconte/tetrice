@@ -300,11 +300,14 @@ void display_sync_ui(game_state_t* state)
 
 void display_clear_screen()
 {
-    unsigned char y;
+    unsigned char x, y;
     color(white, black);
     for (y = 0; y < 25; y++)
     {
-        prints(0, y, "                                        ");
+        for (x = 0; x < 40; x++)
+        {
+            printc(x, y, ' ');
+        }
     }
 }
 
