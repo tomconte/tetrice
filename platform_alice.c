@@ -1,6 +1,11 @@
 #include "platform.h"
 
 #ifdef ALICE
+#include "game_state.h"
+
+// Colors for each tetromino - Alice specific mapping
+char tetrominos_colors[] = {
+    yellow, cyan, pink, green, red, blue, orange};
 
 
 // Keyboard matrix for Alice
@@ -243,6 +248,104 @@ input_action_t platform_get_input()
         default:
             return INPUT_NONE;
     }
+}
+
+/************************************************************/
+/* Display Sync API Implementation                         */
+/************************************************************/
+
+void display_sync_playfield(game_state_t* state)
+{
+    uint8_t x, y, cell_data, cell_content;
+    
+    for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
+        for (x = 0; x < PLAYFIELD_WIDTH; x++) {
+            cell_data = state->playfield[y][x];
+            
+            // Only redraw cells that are marked dirty
+            if (GET_CELL_DIRTY(cell_data)) {
+                cell_content = GET_CELL_CONTENT(cell_data);
+                
+                if (cell_content != CELL_EMPTY) {
+                    color(tetrominos_colors[cell_content - CELL_PIECE_1], black);
+                    printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, '\x7F');
+                } else {
+                    color(black, black);
+                    printc(PLAYFIELD_START_X + x, PLAYFIELD_START_Y + y, ' ');
+                }
+                
+                // Clear dirty flag after redraw
+                CLEAR_CELL_DIRTY(state->playfield[y][x]);
+            }
+        }
+    }
+}
+
+
+void display_sync_ui(game_state_t* state)
+{
+    char print_str[4];
+    extern void int_to_string(uint8_t score, char *str);
+    
+    color(white, black);
+    
+    // Display score
+    int_to_string(state->score, print_str);
+    prints(UI_START_X, 3, print_str);
+    
+    // Display level
+    int_to_string(state->level, print_str);
+    prints(UI_START_X, 6, print_str);
+}
+
+void display_clear_screen()
+{
+    unsigned char x, y;
+    color(white, black);
+    for (y = 0; y < 25; y++)
+    {
+        for (x = 0; x < 40; x++)
+        {
+            printc(x, y, ' ');
+        }
+    }
+}
+
+void display_draw_borders()
+{
+    unsigned char y;
+    
+    // Print title
+    color(yellow, black);
+    prints(9, 0, "Tetris + Alice = TETRICE");
+
+    // Title graphics
+    color(yellow, black);
+    printsg(0, 2, "\x6b\x41\x77\x41\x6b\x41\x66\x55\x55\x57\x41\x77\x41");
+    printsg(0, 3, "\x4a\x40\x4d\x44\x4a\x40\x45\x45\x45\x4d\x44\x4d\x44");
+
+    // Instructions
+    color(pink, black);
+    prints(2, 11, "O: LEFT");
+    prints(2, 12, "P: RIGHT");
+    prints(2, 13, "Z: ROTATE");
+    prints(2, 14, "A: UNROTATE");
+    prints(2, 15, "SPACE: DROP");
+
+    // Draw playfield borders
+    color(magenta, black);
+    for (y = 0; y < 23; y++)
+    {
+        printcg(PLAYFIELD_START_X - 1, 2+y, '\x6A');
+        printcg(PLAYFIELD_END_X + 1, 2+y, '\x55');
+    }
+    prints(PLAYFIELD_START_X - 1, 24, "\x42\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x43\x41");
+    prints(PLAYFIELD_START_X - 1, 1, "\x60\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x70\x50");
+
+    // UI labels
+    color(white, black);
+    prints(UI_START_X, 2, "SCORE");
+    prints(UI_START_X, 5, "LEVEL");
 }
 
 #endif // ALICE

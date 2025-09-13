@@ -1,287 +1,160 @@
 /************************************************************/
 /* Tetromino shapes                                         */
 /* Each shape is defined by a 4-element array containing    */
-/* (x,y) coordinates of the four blocks for the shape,      */
-/* relative to the top left block of coordinates (0,0).     */
-/* The array also has a third value which is a bit array    */
-/* that indicate which side of the shape a block is located */
-/* for the purpose of collision detection.                  */
-/* For each shape we have an array containing the           */
-/* possible rotations.                                      */
+/* bit-packed coordinates and side flags for the four       */
+/* blocks. Format: bits 0-1=X, bits 2-3=Y, bits 4-6=sides */
+/* Relative to top left block coordinates (0,0).            */
+/* All rotations stored consecutively, accessed by offset.  */
 /************************************************************/
 
 #define SIDE_LEFT 0x01
 #define SIDE_RIGHT 0x02
 #define SIDE_BOTTOM 0x04
 
-typedef uint8_t tetromino[4][3];
+// Bit-packed tetromino format (4 bytes per shape vs 12 bytes)
+typedef uint8_t packed_tetromino[4];
 
-/*
-* XX
-* XX
-*/
-tetromino tetromino_O = {
-    {0, 0, SIDE_LEFT},
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 0, SIDE_RIGHT},
-    {1, 1, SIDE_RIGHT | SIDE_BOTTOM}
+// Bit manipulation macros for packed format
+#define GET_BLOCK_X(block) ((block) & 0x03)
+#define GET_BLOCK_Y(block) (((block) >> 2) & 0x03)
+#define GET_BLOCK_SIDES(block) (((block) >> 4) & 0x07)
+#define PACK_BLOCK(x,y,sides) ((x) | ((y)<<2) | ((sides)<<4))
+
+// All tetromino rotations stored consecutively
+packed_tetromino all_tetrominos[] = {
+    // O piece (1 rotation) - offset 0
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 0, SIDE_RIGHT),
+        PACK_BLOCK(1, 1, SIDE_RIGHT | SIDE_BOTTOM)
+    },
+    // I piece (2 rotations) - offset 1
+    { 
+        PACK_BLOCK(0, 0, SIDE_BOTTOM | SIDE_LEFT),
+        PACK_BLOCK(1, 0, SIDE_BOTTOM),
+        PACK_BLOCK(2, 0, SIDE_BOTTOM),
+        PACK_BLOCK(3, 0, SIDE_BOTTOM | SIDE_RIGHT)
+    },
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 2, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 3, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM)
+    },
+
+    // T piece (4 rotations) - offset 3  
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 0, 0),
+        PACK_BLOCK(2, 0, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(1, 0, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(1, 1, SIDE_RIGHT),
+        PACK_BLOCK(1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 1, SIDE_BOTTOM),
+        PACK_BLOCK(2, 1, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 0, SIDE_LEFT | SIDE_RIGHT)
+    },
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 1, SIDE_LEFT),
+        PACK_BLOCK(0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 1, SIDE_RIGHT | SIDE_BOTTOM)
+    },
+
+    // S piece (2 rotations) - offset 7
+    { 
+        PACK_BLOCK(1, 0, SIDE_LEFT),
+        PACK_BLOCK(2, 0, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 1, SIDE_RIGHT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 1, SIDE_RIGHT),
+        PACK_BLOCK(1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM)
+    },
+
+    // Z piece (2 rotations) - offset 9
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 0, SIDE_RIGHT),
+        PACK_BLOCK(1, 1, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(2, 1, SIDE_RIGHT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(1, 0, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(1, 1, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(0, 1, SIDE_LEFT),
+        PACK_BLOCK(0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM)
+    },
+
+    // J piece (4 rotations) - offset 11
+    { 
+        PACK_BLOCK(1, 0, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(1, 1, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(1, 2, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(0, 2, SIDE_LEFT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 1, SIDE_BOTTOM),
+        PACK_BLOCK(2, 1, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_RIGHT)
+    },
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 0, SIDE_RIGHT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 0, SIDE_BOTTOM),
+        PACK_BLOCK(2, 0, SIDE_RIGHT),
+        PACK_BLOCK(2, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM)
+    },
+
+    // L piece (4 rotations) - offset 15
+    { 
+        PACK_BLOCK(1, 0, SIDE_RIGHT),
+        PACK_BLOCK(1, 1, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 1, SIDE_BOTTOM),
+        PACK_BLOCK(2, 1, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(2, 0, SIDE_RIGHT)
+    },
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_RIGHT),
+        PACK_BLOCK(0, 2, SIDE_LEFT | SIDE_BOTTOM),
+        PACK_BLOCK(1, 2, SIDE_RIGHT | SIDE_BOTTOM)
+    },
+    { 
+        PACK_BLOCK(0, 0, SIDE_LEFT),
+        PACK_BLOCK(1, 0, SIDE_BOTTOM),
+        PACK_BLOCK(2, 0, SIDE_RIGHT | SIDE_BOTTOM),
+        PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM)
+    }
 };
 
-tetromino *tetromino_O_shapes[] = {&tetromino_O};
+// Offset table for accessing tetromino rotations (replaces pointer arrays)
+uint8_t tetromino_offsets[] = {0, 1, 3, 7, 9, 11, 15};
 
-uint8_t tetromino_O_widths[] = {2};
+// Number of rotations per tetromino
+uint8_t tetrominos_nb_shapes[] = {1, 2, 4, 2, 2, 4, 4};
 
-/*
-* XXXX
-*/
-tetromino tetromino_I_1 = {
-    {0, 0, SIDE_BOTTOM | SIDE_LEFT},
-    {1, 0, SIDE_BOTTOM},
-    {2, 0, SIDE_BOTTOM},
-    {3, 0, SIDE_BOTTOM | SIDE_RIGHT}
-};
-
-/*
-* X
-* X
-* X
-* X
-*/
-tetromino tetromino_I_2 = {
-    {0, 0, SIDE_LEFT | SIDE_RIGHT},
-    {0, 1, SIDE_LEFT | SIDE_RIGHT},
-    {0, 2, SIDE_LEFT | SIDE_RIGHT},
-    {0, 3, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-tetromino *tetromino_I_shapes[] = {&tetromino_I_1, &tetromino_I_2};
-
-uint8_t tetromino_I_widths[] = {4, 1};
-
-/*
-* XXX
-*  X
-*/
-tetromino tetromino_T_1 = {
-    {0, 0, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 0, 0},
-    {2, 0, SIDE_RIGHT | SIDE_BOTTOM},
-    {1, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-};
-
-/*
-*  X
-* XX
-*  X
-*/
-tetromino tetromino_T_2 = {
-    {1, 0, SIDE_LEFT | SIDE_RIGHT},
-    {1, 1, SIDE_RIGHT},
-    {1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-};
-
-/*
-*  X
-* XXX
-*/
-tetromino tetromino_T_3 = {
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 1, SIDE_BOTTOM},
-    {2, 1, SIDE_RIGHT | SIDE_BOTTOM},
-    {1, 0, SIDE_LEFT | SIDE_RIGHT},
-};
-
-
-/*
-* X
-* XX
-* X
-*/
-tetromino tetromino_T_4 = {
-    {0, 0, SIDE_LEFT | SIDE_RIGHT},
-    {0, 1, SIDE_LEFT},
-    {0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-    {1, 1, SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-uint8_t tetromino_T_widths[] = {3, 2, 3, 2};
-
-tetromino *tetromino_T_shapes[] = {&tetromino_T_1, &tetromino_T_2, &tetromino_T_3, &tetromino_T_4};
-
-/*
-*  XX
-* XX
-*/
-tetromino tetromino_S_1 = {
-    {1, 0, SIDE_LEFT},
-    {2, 0, SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 1, SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-/*
-* X
-* XX
-*  X
-*/
-tetromino tetromino_S_2 = {
-    {0, 0, SIDE_LEFT | SIDE_RIGHT},
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 1, SIDE_RIGHT},
-    {1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-tetromino *tetromino_S_shapes[] = {&tetromino_S_1, &tetromino_S_2};
-
-uint8_t tetromino_S_widths[] = {3, 2};
-
-/*
-* XX
-*  XX
-*/
-tetromino tetromino_Z_1 = {
-    {0, 0, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 0, SIDE_RIGHT},
-    {1, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {2, 1, SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-/*
-*  X
-* XX
-* X
-*/
-tetromino tetromino_Z_2 = {
-    {1, 0, SIDE_LEFT | SIDE_RIGHT},
-    {1, 1, SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 1, SIDE_LEFT},
-    {0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-tetromino *tetromino_Z_shapes[] = {&tetromino_Z_1, &tetromino_Z_2};
-
-uint8_t tetromino_Z_widths[] = {3, 2};
-
-/*
-*  X
-*  X
-* XX
-*/
-tetromino tetromino_J_1 = {
-    {1, 0, SIDE_LEFT | SIDE_RIGHT},
-    {1, 1, SIDE_LEFT | SIDE_RIGHT},
-    {1, 2, SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 2, SIDE_LEFT | SIDE_BOTTOM}
-};
-
-/*
-* X
-* XXX
-*/
-tetromino tetromino_J_2 = {
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 1, SIDE_BOTTOM},
-    {2, 1, SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 0, SIDE_LEFT | SIDE_RIGHT}
-};
-
-/*
-* XX
-* X
-* X
-*/
-tetromino tetromino_J_3 = {
-    {0, 0, SIDE_LEFT},
-    {0, 1, SIDE_LEFT | SIDE_RIGHT},
-    {0, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-    {1, 0, SIDE_RIGHT | SIDE_BOTTOM},
-};
-
-/*
-* XXX
-*   X
-*/
-tetromino tetromino_J_4 = {
-    {0, 0, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 0, SIDE_BOTTOM},
-    {2, 0, SIDE_RIGHT},
-    {2, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-};
-
-tetromino *tetromino_J_shapes[] = {&tetromino_J_1, &tetromino_J_2, &tetromino_J_3, &tetromino_J_4};
-
-uint8_t tetromino_J_widths[] = {2, 3, 2, 3};
-
-/*
-* XX
-*  X
-*  X
-*/
-tetromino tetromino_L_1 = {
-    {1, 0, SIDE_RIGHT},
-    {1, 1, SIDE_LEFT | SIDE_RIGHT},
-    {1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 0, SIDE_LEFT | SIDE_BOTTOM},
-};
-
-/*
-*   X
-* XXX
-*/
-tetromino tetromino_L_2 = {
-    {0, 1, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 1, SIDE_BOTTOM},
-    {2, 1, SIDE_RIGHT | SIDE_BOTTOM},
-    {2, 0, SIDE_RIGHT},
-};
-
-/*
-* X
-* X
-* XX
-*/
-tetromino tetromino_L_3 = {
-    {0, 0, SIDE_LEFT | SIDE_RIGHT},
-    {0, 1, SIDE_LEFT | SIDE_RIGHT},
-    {0, 2, SIDE_LEFT | SIDE_BOTTOM},
-    {1, 2, SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-/*
-* XXX
-* X
-*/
-tetromino tetromino_L_4 = {
-    {0, 0, SIDE_LEFT},
-    {1, 0, SIDE_BOTTOM},
-    {2, 0, SIDE_RIGHT | SIDE_BOTTOM},
-    {0, 1, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM}
-};
-
-tetromino *tetromino_L_shapes[] = {&tetromino_L_1, &tetromino_L_2, &tetromino_L_3, &tetromino_L_4};
-
-uint8_t tetromino_L_widths[] = {2, 3, 2, 3};
-
-// All tetrominos gathered in one array
-tetromino **tetrominos[] = {
-    tetromino_O_shapes,
-    tetromino_I_shapes,
-    tetromino_T_shapes,
-    tetromino_S_shapes,
-    tetromino_Z_shapes,
-    tetromino_J_shapes,
-    tetromino_L_shapes};
-
-// All widths
-uint8_t *tetrominos_widths[] = {
-    tetromino_O_widths,
-    tetromino_I_widths,
-    tetromino_T_widths,
-    tetromino_S_widths,
-    tetromino_Z_widths,
-    tetromino_J_widths,
-    tetromino_L_widths};
-
-// Number of rotations shapes per tetromino
-char tetrominos_nb_shapes[] = {1, 2, 4, 2, 2, 4, 4};
+// Macro to access a specific tetromino rotation
+#define GET_TETROMINO(piece, rotation) (&all_tetrominos[tetromino_offsets[piece] + (rotation)])
