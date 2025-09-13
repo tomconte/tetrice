@@ -12,8 +12,8 @@
 
 // Abstract cell type constants - platform agnostic
 #define CELL_EMPTY    0
-#define CELL_PIECE_1  1  // I-piece (cyan)
-#define CELL_PIECE_2  2  // O-piece (yellow) 
+#define CELL_PIECE_1  1  // O-piece (yellow)
+#define CELL_PIECE_2  2  // I-piece (cyan) 
 #define CELL_PIECE_3  3  // T-piece (pink)
 #define CELL_PIECE_4  4  // S-piece (green)
 #define CELL_PIECE_5  5  // Z-piece (red)
