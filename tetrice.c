@@ -39,11 +39,11 @@ void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned ch
     packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     unsigned char i;
     unsigned char px, py;
-    
+
     for (i = 0; i < 4; i++)
     {
-        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
+        px = x + GET_BLOCK_X((*tetromino)[i]);
+        py = y + GET_BLOCK_Y((*tetromino)[i]);
         playfield_set_cell(state, px, py, CELL_PIECE_1 + piece);
     }
 }
@@ -55,11 +55,11 @@ void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned c
     packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     unsigned char i;
     unsigned char px, py;
-    
+
     for (i = 0; i < 4; i++)
     {
-        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
+        px = x + GET_BLOCK_X((*tetromino)[i]);
+        py = y + GET_BLOCK_Y((*tetromino)[i]);
         playfield_set_cell(state, px, py, CELL_EMPTY);
     }
 }
@@ -76,9 +76,9 @@ uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
     {
         if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_LEFT)
         {
-            px = x + GET_BLOCK_X((*tetromino)[i]) - 1 - PLAYFIELD_START_X;
-            py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
-            
+            px = x + GET_BLOCK_X((*tetromino)[i]) - 1;
+            py = y + GET_BLOCK_Y((*tetromino)[i]);
+
             if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
@@ -98,9 +98,9 @@ uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y
     {
         if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_RIGHT)
         {
-            px = x + GET_BLOCK_X((*tetromino)[i]) + 1 - PLAYFIELD_START_X;
-            py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
-            
+            px = x + GET_BLOCK_X((*tetromino)[i]) + 1;
+            py = y + GET_BLOCK_Y((*tetromino)[i]);
+
             if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
@@ -120,9 +120,9 @@ uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t 
     {
         if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_BOTTOM)
         {
-            px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-            py = y + GET_BLOCK_Y((*tetromino)[i]) + 1 - PLAYFIELD_START_Y;
-            
+            px = x + GET_BLOCK_X((*tetromino)[i]);
+            py = y + GET_BLOCK_Y((*tetromino)[i]) + 1;
+
             if (py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
@@ -162,9 +162,9 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
     tetromino = GET_TETROMINO(piece, new_rotation);
     for (i = 0; i < 4; i++)
     {
-        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
-        
+        px = x + GET_BLOCK_X((*tetromino)[i]);
+        py = y + GET_BLOCK_Y((*tetromino)[i]);
+
         if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
         {
             // Collision - restore piece in playfield
@@ -316,13 +316,21 @@ void gameloop()
     input_action_t input;
     input_action_t prev_input;
     unsigned char bounce;
-    
+
+    #ifdef PHC25
+    //debug_print(10, 20, "INIT");
+    #endif
+
     // Initialize game state
     init_game_state(&state);
-    
+
+    #ifdef PHC25
+    //debug_print(10, 25, "PLACE");
+    #endif
+
     // Place initial piece in playfield
     playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
-    
+
     // Initialize other variables
     px = state.x;
     py = state.y;
@@ -334,9 +342,17 @@ void gameloop()
     // Set initial timer
     timeout_ticks = state.speed;
 
+    #ifdef PHC25
+    //debug_print(10, 30, "SYNC");
+    #endif
+
     // Initial display sync
     display_sync_ui(&state);
     display_sync_playfield(&state);
+
+    #ifdef PHC25
+    //debug_print(10, 35, "LOOP");
+    #endif
 
     // Loop until game over
     while (1)
@@ -349,8 +365,16 @@ void gameloop()
         // Remove piece from playfield before any movement checks
         playfield_remove_piece(&state, state.piece, state.x, state.y, state.rotation);
 
+        #ifdef PHC25
+        //debug_print(10, 40, "INPUT");
+        #endif
+
         // Get input action
         input = platform_get_input();
+
+        #ifdef PHC25
+        //debug_print_hex(50, 40, (uint8_t)input);
+        #endif
 
         // Piece falls
         if (input == INPUT_TIMEOUT || input == INPUT_DROP)
@@ -406,6 +430,10 @@ void gameloop()
                 // Check for game over (before placing new piece)
                 if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
                 {
+                    #ifdef PHC25
+                    //debug_print(10, 45, "OVER");
+                    #endif
+
                     // Game over
                     color(white, black);
                     prints(PLAYFIELD_START_X+1, 10, "GAME  OVER");
@@ -493,14 +521,31 @@ void main()
         display_clear_screen();
         display_draw_borders();
 
+        #ifdef PHC25
+        //debug_print(8, 10, "MAIN");
+        #endif
+
         // Welcome message and wait to start game
-        color(white, black);
-        prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
+        //color(white, black);
+        //prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
+
+        #ifdef PHC25
+        //debug_print(8, 30, "WAIT");
+        #endif
+
         wait_key();
         ticks(5);
-        prints(PLAYFIELD_START_X+1, 10, "          ");
+        //prints(PLAYFIELD_START_X+1, 10, "          ");
+
+        #ifdef PHC25
+        //debug_print(8, 35, "GAME");
+        #endif
 
         // Call game loop
         gameloop();
+
+        #ifdef PHC25
+        //debug_print(8, 40, "EXIT");
+        #endif
     }
 }

@@ -51,12 +51,14 @@ extern uint8_t all_key_columns[8];
 #define PLAYFIELD_WIDTH 12
 #define PLAYFIELD_HEIGHT 22
 
-// Display layout configuration
-#define PLAYFIELD_START_X 15
-#define PLAYFIELD_START_Y 2
+// Display layout configuration (screen coordinates)
+#define PLAYFIELD_START_X 15       /* Screen column where playfield starts */
+#define PLAYFIELD_START_Y 2        /* Screen row where playfield starts */
 #define UI_START_X 29              /* Score/Level display position */
-#define PIECE_START_X 20           /* Starting X position for new pieces */
-#define PIECE_START_Y 2            /* Starting Y position for new pieces */
+
+// Piece starting position (playfield coordinates)
+#define PIECE_START_X 5            /* Starting X in playfield coords (0-11) */
+#define PIECE_START_Y 0            /* Starting Y in playfield coords (0-21) */
 
 // Derived constants  
 #define PLAYFIELD_END_X (PLAYFIELD_START_X + PLAYFIELD_WIDTH - 1)
