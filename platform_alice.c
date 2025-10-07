@@ -23,8 +23,10 @@ uint8_t keys_per_column[8][8] = {
 uint8_t all_key_columns[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
 
 /************************************************************/
-/* Display functions for Alice 32/90                        */
+/* Internal platform functions                              */
 /************************************************************/
+
+/* Low-level graphics primitives for internal use by platform layer */
 
 void posxy(unsigned char column, unsigned char line)
 {
@@ -93,20 +95,6 @@ void printcg(unsigned char x, unsigned char y, unsigned char c)
     POKE(R2, 0x20);
     POKE(R0EXEC, 1);
     BUSY();
-}
-
-uint8_t charatxy(uint8_t column, uint8_t line)
-{
-    if (line > 0)
-        line += 7;
-
-    POKE(R6, line);
-    POKE(R7, column);
-
-    POKE(R0EXEC, 8);
-    BUSY();
-
-    return PEEK(R1);
 }
 
 /************************************************************/
@@ -314,7 +302,7 @@ void display_clear_screen()
 void display_draw_borders()
 {
     unsigned char y;
-    
+
     // Print title
     color(yellow, black);
     prints(9, 0, "Tetris + Alice = TETRICE");
@@ -346,6 +334,12 @@ void display_draw_borders()
     color(white, black);
     prints(UI_START_X, 2, "SCORE");
     prints(UI_START_X, 5, "LEVEL");
+}
+
+void display_game_over()
+{
+    color(white, black);
+    prints(PLAYFIELD_START_X+1, 10, "GAME  OVER");
 }
 
 #endif // ALICE

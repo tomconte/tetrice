@@ -435,8 +435,7 @@ void gameloop()
                     #endif
 
                     // Game over
-                    color(white, black);
-                    prints(PLAYFIELD_START_X+1, 10, "GAME  OVER");
+                    display_game_over();
                     ticks(15);
                     // Wait for key
                     wait_key();

@@ -2,18 +2,23 @@
 
 #ifdef PHC25
 #include "game_state.h"
-#include "debug_font.h"
 
 /************************************************************/
 /* PHC-25 Mode 12 Graphics Implementation                   */
 /* Based on successful POC using 256x192 monochrome        */
 /************************************************************/
 
-/* Global variables */
-static uint8_t current_fg_color = green;
-static uint8_t current_bg_color = black;
-static uint8_t cursor_x = 0;
-static uint8_t cursor_y = 0;
+/* Block patterns for each tetromino type (8x8 pixels) */
+/* Generated from gfx/blocks.png */
+const uint8_t block_patterns[7][8] = {
+    {0xFE, 0xAA, 0xD6, 0xAA, 0xD6, 0xAA, 0xFE, 0x00},  /* I */
+    {0xFE, 0x82, 0x82, 0x92, 0x82, 0x82, 0xFE, 0x00},  /* O */
+    {0xFE, 0x82, 0x86, 0x8E, 0x9E, 0xBE, 0xFE, 0x00},  /* T */
+    {0xFE, 0x82, 0xBA, 0xAA, 0xBA, 0x82, 0xFE, 0x00},  /* S */
+    {0xFE, 0xC6, 0x82, 0x82, 0x82, 0xC6, 0xFE, 0x00},  /* Z */
+    {0xFE, 0xD6, 0x92, 0xFE, 0x92, 0xD6, 0xFE, 0x00},  /* J */
+    {0xFE, 0xAA, 0xEE, 0x82, 0xEE, 0xAA, 0xFE, 0x00}   /* L */
+};
 
 /* Timeout for input functions - defined in tetrice.c */
 extern uint8_t timeout_ticks;
@@ -103,12 +108,14 @@ void draw_tetris_block(uint8_t block_x, uint8_t block_y, uint8_t filled)
     }
 }
 
-/* Draw a tetris block with outline pattern */
-void draw_tetris_block_outline(uint8_t block_x, uint8_t block_y)
+/* Draw a tetris block with pattern based on color */
+void draw_tetris_block_pattern(uint8_t block_x, uint8_t block_y, uint8_t color)
 {
     uint16_t start_addr;
     uint8_t pixel_x, pixel_y;
     uint8_t row;
+
+    if (color == 0 || color > 7) return; /* Invalid color */
 
     /* Calculate starting pixel position */
     pixel_x = PLAYFIELD_START_X + (block_x << 3);  /* block_x * 8 */
@@ -117,19 +124,11 @@ void draw_tetris_block_outline(uint8_t block_x, uint8_t block_y)
     /* Bounds check */
     if (block_x >= PLAYFIELD_WIDTH || block_y >= PLAYFIELD_HEIGHT) return;
 
-    /* Draw 8x8 outline pattern */
+    /* Draw 8x8 block using pattern */
     for (row = 0; row < BLOCK_SIZE; row++) {
         /* Calculate VRAM address for this row */
         start_addr = VRAM_START + ((pixel_y + row) << 5) + (pixel_x >> 3);
-
-        /* Create outline pattern based on row position */
-        if (row == 0 || row == 7) {
-            /* Top and bottom rows: full outline */
-            POKE(start_addr, 0xFF);  /* 11111111 */
-        } else {
-            /* Middle rows: only left and right edges */
-            POKE(start_addr, 0x81);  /* 10000001 */
-        }
+        POKE(start_addr, block_patterns[color-1][row]);
     }
 }
 
@@ -163,60 +162,6 @@ void draw_vertical_line(uint8_t x, uint8_t y1, uint8_t y2)
         byte_val |= (1 << bit_pos);
         POKE(addr, byte_val);
     }
-}
-
-/************************************************************/
-/* Platform Abstraction Layer Implementation               */
-/************************************************************/
-
-void posxy(unsigned char column, unsigned char line)
-{
-    /* Store cursor position for text rendering */
-    cursor_x = column;
-    cursor_y = line;
-}
-
-void color(unsigned char foreground, unsigned char background)
-{
-    /* Store colors for text rendering - in monochrome, only distinguish black vs non-black */
-    current_fg_color = (foreground == black) ? black : green;
-    current_bg_color = (background == black) ? black : green;
-}
-
-void prints(unsigned char x, unsigned char y, unsigned char *text)
-{
-    /* Simple text rendering - for now just update cursor position */
-    /* Full bitmap font implementation would be needed for complete text */
-    posxy(x, y);
-    /* TODO: Implement bitmap font rendering */
-}
-
-void printsg(unsigned char x, unsigned char y, unsigned char *text)
-{
-    /* Graphic character rendering - similar to prints for now */
-    posxy(x, y);
-    /* TODO: Implement graphic character patterns */
-}
-
-void printc(unsigned char x, unsigned char y, unsigned char c)
-{
-    /* Single character rendering */
-    posxy(x, y);
-    /* TODO: Implement bitmap character rendering */
-}
-
-void printcg(unsigned char x, unsigned char y, unsigned char c)
-{
-    /* Graphic character rendering */
-    posxy(x, y);
-    /* TODO: Implement graphic patterns */
-}
-
-uint8_t charatxy(uint8_t column, uint8_t line)
-{
-    /* Return character at screen position - not easily possible in pixel mode */
-    /* Would need to maintain a shadow buffer for character positions */
-    return ' ';  /* Default to space */
 }
 
 /************************************************************/
@@ -306,7 +251,7 @@ void sleep(uint8_t seconds)
     /* TODO: Implement using hardware timer if available */
     uint16_t i, j;
     for (i = 0; i < seconds; i++) {
-        for (j = 0; j < 1000; j++) {
+        for (j = 0; j < 2000; j++) {
             /* Busy wait loop */
         }
     }
@@ -407,8 +352,8 @@ void display_sync_playfield(game_state_t* state)
                 cell_content = GET_CELL_CONTENT(cell_data);
 
                 if (cell_content != CELL_EMPTY) {
-                    /* Draw filled block for any piece type */
-                    draw_tetris_block_outline(x, y);
+                    /* Draw block with pattern based on piece color */
+                    draw_tetris_block_pattern(x, y, cell_content);
                 } else {
                     /* Erase block */
                     erase_tetris_block(x, y);
@@ -453,6 +398,13 @@ void display_draw_borders()
 
     /* Title area border - full width */
     //draw_horizontal_line(0, 255, 7);                    /* Title bottom border */
+}
+
+void display_game_over()
+{
+    /* TODO: Implement bitmap font rendering for "GAME OVER" message */
+    /* For now, this is a placeholder - full implementation requires bitmap font */
+    /* The message should be displayed in the center of the playfield */
 }
 
 #endif // PHC25
