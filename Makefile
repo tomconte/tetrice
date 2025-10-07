@@ -81,7 +81,7 @@ tetrice.phc: tetrice_phc25
 	$(BIN_TO_PHC) phetrice .\tetrice.bin .\tetrice.phc
 
 tetrice_phc25:
-	$(PHC25_ZCC) $(PHC25_TARGET) $(PHC25_FLAGS) -crt0=$(PHC25_CRT0) -m -o tetrice $(SRC) $(PHC25_PLATFORM_SRC)
+	$(PHC25_ZCC) $(PHC25_TARGET) $(PHC25_FLAGS) -SO3 --opt-code-size -DNDEBUG -crt0=$(PHC25_CRT0) -m -o tetrice $(SRC) $(PHC25_PLATFORM_SRC)
 
 else
 $(error Unknown target: $(TARGET). Use 'alice' or 'phc25')

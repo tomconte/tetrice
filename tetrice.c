@@ -520,31 +520,20 @@ void main()
         display_clear_screen();
         display_draw_borders();
 
-        #ifdef PHC25
-        //debug_print(8, 10, "MAIN");
-        #endif
-
+        #ifdef ALICE
         // Welcome message and wait to start game
-        //color(white, black);
-        //prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
-
-        #ifdef PHC25
-        //debug_print(8, 30, "WAIT");
+        color(white, black);
+        prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
         #endif
 
         wait_key();
         ticks(5);
-        //prints(PLAYFIELD_START_X+1, 10, "          ");
 
-        #ifdef PHC25
-        //debug_print(8, 35, "GAME");
+        #ifdef ALICE
+        prints(PLAYFIELD_START_X+1, 10, "          ");
         #endif
 
         // Call game loop
         gameloop();
-
-        #ifdef PHC25
-        //debug_print(8, 40, "EXIT");
-        #endif
     }
 }
