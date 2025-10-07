@@ -12,6 +12,7 @@ uint8_t playfield_is_empty_cell(game_state_t* state, uint8_t x, uint8_t y);
 void playfield_clear(game_state_t* state);
 void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
 void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
+uint8_t check_collision(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t side_flag, int8_t dx, int8_t dy);
 uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
 uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
 uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
@@ -65,8 +66,8 @@ void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned c
 }
 
 
-// Detect collision left
-uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+// Generic collision detection function
+uint8_t check_collision(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t side_flag, int8_t dx, int8_t dy)
 {
     packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     uint8_t i;
@@ -74,61 +75,35 @@ uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
 
     for (i = 0; i < 4; i++)
     {
-        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_LEFT)
+        if (GET_BLOCK_SIDES((*tetromino)[i]) & side_flag)
         {
-            px = x + GET_BLOCK_X((*tetromino)[i]) - 1;
-            py = y + GET_BLOCK_Y((*tetromino)[i]);
+            px = x + GET_BLOCK_X((*tetromino)[i]) + dx;
+            py = y + GET_BLOCK_Y((*tetromino)[i]) + dy;
 
-            if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
+            if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
     }
 
     return 0;
+}
+
+// Detect collision left
+uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+{
+    return check_collision(state, piece, x, y, rotation, SIDE_LEFT, -1, 0);
 }
 
 // Detect collision right
 uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
-    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
-    uint8_t i;
-    uint8_t px, py;
-
-    for (i = 0; i < 4; i++)
-    {
-        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_RIGHT)
-        {
-            px = x + GET_BLOCK_X((*tetromino)[i]) + 1;
-            py = y + GET_BLOCK_Y((*tetromino)[i]);
-
-            if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
-                return 1;
-        }
-    }
-
-    return 0;
+    return check_collision(state, piece, x, y, rotation, SIDE_RIGHT, 1, 0);
 }
 
 // Detect collision bottom
 uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
-    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
-    uint8_t i;
-    uint8_t px, py;
-
-    for (i = 0; i < 4; i++)
-    {
-        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_BOTTOM)
-        {
-            px = x + GET_BLOCK_X((*tetromino)[i]);
-            py = y + GET_BLOCK_Y((*tetromino)[i]) + 1;
-
-            if (py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
-                return 1;
-        }
-    }
-
-    return 0;
+    return check_collision(state, piece, x, y, rotation, SIDE_BOTTOM, 0, 1);
 }
 
 // Check if a piece can rotate by checking collisions
@@ -142,20 +117,11 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
     // Remove piece from playfield
     playfield_remove_piece(state, piece, x, y, rotation);
 
-    // Rotate piece
-    if (direction == 0)
+    // Rotate piece - calculate new rotation based on direction
     {
-        if (rotation < tetrominos_nb_shapes[piece] - 1)
-            new_rotation = rotation + 1;
-        else
-            new_rotation = 0;
-    }
-    else
-    {
-        if (rotation > 0)
-            new_rotation = rotation - 1;
-        else
-            new_rotation = tetrominos_nb_shapes[piece] - 1;
+        uint8_t max = tetrominos_nb_shapes[piece];
+        new_rotation = direction ? ((rotation > 0) ? rotation - 1 : max - 1)
+                                 : ((rotation + 1 < max) ? rotation + 1 : 0);
     }
 
     // Check collision
