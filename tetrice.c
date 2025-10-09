@@ -209,15 +209,6 @@ uint8_t check_full_lines(game_state_t* state)
     }
 }
 
-// Convert int to a three char string with leading zeros
-void int_to_string(uint8_t score, char *str)
-{
-    str[0] = '0' + (score / 100);
-    str[1] = '0' + ((score % 100) / 10);
-    str[2] = '0' + (score % 10);
-    str[3] = '\0';
-}
-
 /************************************************************/
 /* Playfield Operations API                                 */
 /************************************************************/

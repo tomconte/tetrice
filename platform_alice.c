@@ -270,17 +270,25 @@ void display_sync_playfield(game_state_t* state)
 }
 
 
+/* Convert int to a three char string with leading zeros */
+void int_to_string(uint8_t score, char *str)
+{
+    str[0] = '0' + (score / 100);
+    str[1] = '0' + ((score % 100) / 10);
+    str[2] = '0' + (score % 10);
+    str[3] = '\0';
+}
+
 void display_sync_ui(game_state_t* state)
 {
     char print_str[4];
-    extern void int_to_string(uint8_t score, char *str);
-    
+
     color(white, black);
-    
+
     // Display score
     int_to_string(state->score, print_str);
     prints(UI_START_X, 3, print_str);
-    
+
     // Display level
     int_to_string(state->level, print_str);
     prints(UI_START_X, 6, print_str);

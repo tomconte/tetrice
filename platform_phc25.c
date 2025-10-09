@@ -2,6 +2,7 @@
 
 #ifdef PHC25
 #include "game_state.h"
+#include "game_font.h"
 
 extern void decompress_ui_left(void);
 extern void decompress_ui_right(void);
@@ -84,34 +85,6 @@ void clear_screen(void)
     }
 }
 
-/* Draw a tetris block at grid position (block_x, block_y) */
-void draw_tetris_block(uint8_t block_x, uint8_t block_y, uint8_t filled)
-{
-    uint16_t start_addr;
-    uint8_t pixel_x, pixel_y;
-    uint8_t row;
-    uint8_t fill_byte;
-
-    /* Calculate starting pixel position */
-    pixel_x = PLAYFIELD_START_X + (block_x << 3);  /* block_x * 8 */
-    pixel_y = PLAYFIELD_START_Y + (block_y << 3);  /* block_y * 8 */
-
-    /* Bounds check */
-    if (block_x >= PLAYFIELD_WIDTH || block_y >= PLAYFIELD_HEIGHT) return;
-
-    /* Fill pattern: 0x00 = empty (black), 0xFF = filled (green/white) */
-    fill_byte = filled ? 0xFF : 0x00;
-
-    /* Draw 8x8 block - optimized for Mode 12 */
-    for (row = 0; row < BLOCK_SIZE; row++) {
-        /* Calculate VRAM address for this row */
-        /* Each row is 32 bytes (256 pixels / 8 pixels per byte) */
-        start_addr = VRAM_START + ((pixel_y + row) << 5) + (pixel_x >> 3);
-
-        /* 8 pixels = exactly 1 byte in Mode 12 */
-        POKE(start_addr, fill_byte);
-    }
-}
 
 /* Draw a tetris block with pattern based on color */
 void draw_tetris_block_pattern(uint8_t block_x, uint8_t block_y, uint8_t color)
@@ -140,7 +113,22 @@ void draw_tetris_block_pattern(uint8_t block_x, uint8_t block_y, uint8_t color)
 /* Erase a tetris block (set to background) */
 void erase_tetris_block(uint8_t block_x, uint8_t block_y)
 {
-    draw_tetris_block(block_x, block_y, 0); /* 0 = empty/black */
+    uint16_t start_addr;
+    uint8_t pixel_x, pixel_y;
+    uint8_t row;
+
+    /* Calculate starting pixel position */
+    pixel_x = PLAYFIELD_START_X + (block_x << 3);  /* block_x * 8 */
+    pixel_y = PLAYFIELD_START_Y + (block_y << 3);  /* block_y * 8 */
+
+    /* Bounds check */
+    if (block_x >= PLAYFIELD_WIDTH || block_y >= PLAYFIELD_HEIGHT) return;
+
+    /* Erase 8x8 block */
+    for (row = 0; row < BLOCK_SIZE; row++) {
+        start_addr = VRAM_START + ((pixel_y + row) << 5) + (pixel_x >> 3);
+        POKE(start_addr, 0x00);  /* All pixels off */
+    }
 }
 
 /************************************************************/
@@ -347,9 +335,11 @@ void display_sync_playfield(game_state_t* state)
 
 void display_sync_ui(game_state_t* state)
 {
-    /* Simple UI implementation - would need bitmap font for full text */
-    /* For now, just store the values (could be displayed as simple patterns) */
-    /* TODO: Implement score/level display using bitmap patterns */
+    /* Display score at (216, 134) - 3 digits with leading zeros */
+    draw_number(216, 134, state->score, 3, 1);
+
+    /* Display level at (216, 174) - 3 digits with leading zeros */
+    draw_number(216, 174, state->level, 3, 1);
 }
 
 void display_clear_screen()
@@ -393,25 +383,18 @@ void display_draw_borders()
     /* Draw title at top (full width) - zx0 compressed */
     decompress_ui_title();
     copy_bitmap(0, 0, VRAM2_START, GFX_TITLE_HEIGHT, GFX_TITLE_BYTES_PER_ROW);
-    // draw_bitmap_rle(0, 0, gfx_title, GFX_TITLE_SIZE,
-    //                 GFX_TITLE_WIDTH, GFX_TITLE_HEIGHT, GFX_TITLE_BYTES_PER_ROW);
 
     /* Draw left UI panel - zx0 compressed */
     decompress_ui_left();
     copy_bitmap(0, 8, VRAM2_START, GFX_LEFT_UI_HEIGHT, GFX_LEFT_UI_BYTES_PER_ROW);
-    // draw_bitmap_rle(0, 8, gfx_left_ui, GFX_LEFT_UI_SIZE,
-    //                 GFX_LEFT_UI_WIDTH, GFX_LEFT_UI_HEIGHT, GFX_LEFT_UI_BYTES_PER_ROW);
 
     /* Draw right UI panel - zx0 compressed */
     decompress_ui_right();
     copy_bitmap(168, 8, VRAM2_START, GFX_RIGHT_UI_HEIGHT, GFX_RIGHT_UI_BYTES_PER_ROW);
-    // draw_bitmap_rle(168, 8, gfx_right_ui, GFX_RIGHT_UI_SIZE,
-    //                 GFX_RIGHT_UI_WIDTH, GFX_RIGHT_UI_HEIGHT, GFX_RIGHT_UI_BYTES_PER_ROW);
 
     /* Draw bottom decoration (centered at bottom) - zx0 compressed */
     decompress_ui_bottom();
     copy_bitmap(88, 184, VRAM2_START, GFX_BOTTOM_HEIGHT, GFX_BOTTOM_BYTES_PER_ROW);
-    //                 GFX_BOTTOM_WIDTH, GFX_BOTTOM_HEIGHT, GFX_BOTTOM_BYTES_PER_ROW);
 }
 
 void display_game_over()

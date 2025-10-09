@@ -78,7 +78,6 @@ uint8_t in_port(uint8_t port);
 /* Low-level graphics functions */
 void init_graphics_mode12(void);
 void clear_screen(void);
-void draw_tetris_block(uint8_t block_x, uint8_t block_y, uint8_t filled);
 void draw_tetris_block_pattern(uint8_t block_x, uint8_t block_y, uint8_t color);
 void erase_tetris_block(uint8_t block_x, uint8_t block_y);
 void draw_horizontal_line(uint8_t x1, uint8_t x2, uint8_t y);
