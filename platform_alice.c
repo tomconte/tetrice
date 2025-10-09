@@ -334,6 +334,10 @@ void display_draw_borders()
     color(white, black);
     prints(UI_START_X, 2, "SCORE");
     prints(UI_START_X, 5, "LEVEL");
+
+    // Welcome message and wait to start game
+    // color(white, black);
+    // prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
 }
 
 void display_game_over()

@@ -13,9 +13,10 @@
 #define PEEK(addr) (*((volatile uint8_t *)(addr)))
 
 /* PHC-25 Hardware Definitions */
-#define VRAM_START 0x6000    /* Screen page 1 start address */
-#define VRAM_SIZE  6144      /* 6KB video memory */
-#define PORT_40    0x40      /* Graphics control port */
+#define VRAM_START  0x6000    /* Screen page 1 start address */
+#define VRAM2_START 0xE000   /* Screen page 2 start address */
+#define VRAM_SIZE   6144      /* 6KB video memory */
+#define PORT_40     0x40      /* Graphics control port */
 
 /* MC6847 Mode 12 settings (256x192 monochrome) */
 #define MODE12_AG   0x80     /* A/G = 1 (graphics mode) */

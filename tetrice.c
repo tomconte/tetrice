@@ -488,15 +488,15 @@ void main()
 
         #ifdef ALICE
         // Welcome message and wait to start game
-        color(white, black);
-        prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
+        // color(white, black);
+        // prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
         #endif
 
         wait_key();
         ticks(5);
 
         #ifdef ALICE
-        prints(PLAYFIELD_START_X+1, 10, "          ");
+        // prints(PLAYFIELD_START_X+1, 10, "          ");
         #endif
 
         // Call game loop

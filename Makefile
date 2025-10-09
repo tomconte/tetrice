@@ -44,9 +44,10 @@ PHC25_ZCC = $(Z88DK_PATH)/bin/zcc
 PHC25_TARGET = +sos
 PHC25_CRT0 = crt0_phc25.asm
 PHC25_ADDR = 49161
-PHC25_PLATFORM_SRC = platform_phc25.c #debug_font.c
+PHC25_PLATFORM_SRC = platform_phc25.c phc25_lib.asm #debug_font.c
 PHC25_FLAGS = -DPHC25
 BIN_TO_PHC = C:/Users/tomco/src/phc25/phc25_tools/bin_to_phc/bin_to_phc.exe
+ZX0 = C:\Users\tomco\Downloads\zx0.exe
 
 .PHONY: all clean alice phc25
 
@@ -82,6 +83,18 @@ tetrice.phc: tetrice_phc25
 
 tetrice_phc25:
 	$(PHC25_ZCC) $(PHC25_TARGET) $(PHC25_FLAGS) -SO3 --opt-code-size -DNDEBUG -crt0=$(PHC25_CRT0) -m -o tetrice $(SRC) $(PHC25_PLATFORM_SRC)
+
+phc25_gfx:
+# Convert PNG images to binary format for PHC25
+	python .\tools\png_to_c_array.py --binary .\gfx\images-phetris\left-UI-88x184.png .\gfx\ui_left.bin
+	python .\tools\png_to_c_array.py --binary .\gfx\images-phetris\right-UI-88x184.png .\gfx\ui_right.bin
+	python .\tools\png_to_c_array.py --binary .\gfx\images-phetris\trucenbas-80x8.png .\gfx\ui_bottom.bin
+	python .\tools\png_to_c_array.py --binary .\gfx\images-phetris\title-256x8.png .\gfx\ui_title.bin
+# Compress binary files using ZX0
+	$(ZX0) -f .\gfx\ui_left.bin
+	$(ZX0) -f .\gfx\ui_right.bin
+	$(ZX0) -f .\gfx\ui_bottom.bin
+	$(ZX0) -f .\gfx\ui_title.bin
 
 else
 $(error Unknown target: $(TARGET). Use 'alice' or 'phc25')

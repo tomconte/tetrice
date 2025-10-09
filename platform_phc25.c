@@ -3,11 +3,10 @@
 #ifdef PHC25
 #include "game_state.h"
 
-/* Include generated graphics */
-#include "gfx/gfx_title.h"
-// #include "gfx/gfx_left_ui.h"
-// #include "gfx/gfx_right_ui.h"
-#include "gfx/gfx_bottom.h"
+extern void decompress_ui_left(void);
+extern void decompress_ui_right(void);
+extern void decompress_ui_title(void);
+extern void decompress_ui_bottom(void);
 
 /************************************************************/
 /* PHC-25 Mode 12 Graphics Implementation                   */
@@ -142,49 +141,6 @@ void draw_tetris_block_pattern(uint8_t block_x, uint8_t block_y, uint8_t color)
 void erase_tetris_block(uint8_t block_x, uint8_t block_y)
 {
     draw_tetris_block(block_x, block_y, 0); /* 0 = empty/black */
-}
-
-/* Draw RLE-compressed bitmap data to VRAM */
-void draw_bitmap_rle(uint8_t x, uint8_t y, const uint8_t* compressed_data, uint16_t compressed_size,
-                     uint16_t width, uint16_t height, uint8_t bytes_per_row)
-{
-    uint16_t src_idx = 0;
-    uint16_t row, col;
-    uint16_t vram_addr;
-    uint8_t byte_val, count, value;
-    uint8_t output_col;
-
-    /* Validate x is byte-aligned (multiple of 8) for simpler copying */
-    if ((x & 7) != 0) {
-        return;
-    }
-
-    /* Decompress and draw row by row */
-    for (row = 0; row < height; row++) {
-        vram_addr = VRAM_START + ((y + row) << 5) + (x >> 3);
-        output_col = 0;
-
-        /* Decompress one row worth of data */
-        while (output_col < bytes_per_row && src_idx < compressed_size) {
-            byte_val = compressed_data[src_idx++];
-
-            if (byte_val == 0x01) {
-                /* RLE escape sequence: 0x01 <count> <value> */
-                count = compressed_data[src_idx++];
-                value = compressed_data[src_idx++];
-
-                /* Output 'count' copies of 'value' */
-                for (col = 0; col < count && output_col < bytes_per_row; col++) {
-                    POKE(vram_addr + output_col, value);
-                    output_col++;
-                }
-            } else {
-                /* Literal byte */
-                POKE(vram_addr + output_col, byte_val);
-                output_col++;
-            }
-        }
-    }
 }
 
 /************************************************************/
@@ -402,23 +358,60 @@ void display_clear_screen()
     init_graphics_mode12();
 }
 
+#define GFX_TITLE_HEIGHT 8
+#define GFX_TITLE_BYTES_PER_ROW 32
+#define GFX_LEFT_UI_HEIGHT 184
+#define GFX_LEFT_UI_BYTES_PER_ROW 11
+#define GFX_RIGHT_UI_HEIGHT 184
+#define GFX_RIGHT_UI_BYTES_PER_ROW 11
+#define GFX_BOTTOM_HEIGHT 8
+#define GFX_BOTTOM_BYTES_PER_ROW 10
+
+/* Copy bitmap data to VRAM */
+void copy_bitmap(uint8_t x, uint8_t y, const uint8_t* source_data,
+                 uint16_t height, uint8_t bytes_per_row)
+{
+    uint16_t row, col;
+    uint16_t vram_addr;
+    const uint8_t* src_ptr = source_data;
+
+    /* Validate x is byte-aligned (multiple of 8) */
+    if ((x & 7) != 0) return;
+
+    /* Copy bitmap row by row */
+    for (row = 0; row < height; row++) {
+        vram_addr = VRAM_START + ((y + row) << 5) + (x >> 3);
+
+        for (col = 0; col < bytes_per_row; col++) {
+            POKE(vram_addr + col, *src_ptr++);
+        }
+    }
+}
+
 void display_draw_borders()
 {
-    /* Draw title at top (full width) - RLE compressed */
-    draw_bitmap_rle(0, 0, gfx_title, GFX_TITLE_SIZE,
-                    GFX_TITLE_WIDTH, GFX_TITLE_HEIGHT, GFX_TITLE_BYTES_PER_ROW);
+    /* Draw title at top (full width) - zx0 compressed */
+    decompress_ui_title();
+    copy_bitmap(0, 0, VRAM2_START, GFX_TITLE_HEIGHT, GFX_TITLE_BYTES_PER_ROW);
+    // draw_bitmap_rle(0, 0, gfx_title, GFX_TITLE_SIZE,
+    //                 GFX_TITLE_WIDTH, GFX_TITLE_HEIGHT, GFX_TITLE_BYTES_PER_ROW);
 
-    /* Draw left UI panel - RLE compressed */
+    /* Draw left UI panel - zx0 compressed */
+    decompress_ui_left();
+    copy_bitmap(0, 8, VRAM2_START, GFX_LEFT_UI_HEIGHT, GFX_LEFT_UI_BYTES_PER_ROW);
     // draw_bitmap_rle(0, 8, gfx_left_ui, GFX_LEFT_UI_SIZE,
     //                 GFX_LEFT_UI_WIDTH, GFX_LEFT_UI_HEIGHT, GFX_LEFT_UI_BYTES_PER_ROW);
 
-    /* Draw right UI panel - RLE compressed */
+    /* Draw right UI panel - zx0 compressed */
+    decompress_ui_right();
+    copy_bitmap(168, 8, VRAM2_START, GFX_RIGHT_UI_HEIGHT, GFX_RIGHT_UI_BYTES_PER_ROW);
     // draw_bitmap_rle(168, 8, gfx_right_ui, GFX_RIGHT_UI_SIZE,
     //                 GFX_RIGHT_UI_WIDTH, GFX_RIGHT_UI_HEIGHT, GFX_RIGHT_UI_BYTES_PER_ROW);
 
-    /* Draw bottom decoration (centered at bottom) - RLE compressed */
-    draw_bitmap_rle(88, 184, gfx_bottom, GFX_BOTTOM_SIZE,
-                    GFX_BOTTOM_WIDTH, GFX_BOTTOM_HEIGHT, GFX_BOTTOM_BYTES_PER_ROW);
+    /* Draw bottom decoration (centered at bottom) - zx0 compressed */
+    decompress_ui_bottom();
+    copy_bitmap(88, 184, VRAM2_START, GFX_BOTTOM_HEIGHT, GFX_BOTTOM_BYTES_PER_ROW);
+    //                 GFX_BOTTOM_WIDTH, GFX_BOTTOM_HEIGHT, GFX_BOTTOM_BYTES_PER_ROW);
 }
 
 void display_game_over()

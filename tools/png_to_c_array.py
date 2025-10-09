@@ -155,6 +155,8 @@ def main():
                         help='RLE escape byte (default: 0x01)')
     parser.add_argument('--min-run', type=int, default=4,
                         help='Minimum run length to compress (default: 4)')
+    parser.add_argument('--binary', action='store_true',
+                        help='Output raw binary file instead of C header')
 
     args = parser.parse_args()
 
@@ -186,16 +188,25 @@ def main():
         data = compressed_data
         is_compressed = True
 
-    # Generate header file
-    header_content = generate_header_file(data, width, height, var_name, args.input_png,
-                                          is_compressed=is_compressed,
-                                          uncompressed_size=uncompressed_size if is_compressed else None)
+    # Generate output file
+    if args.binary:
+        # Write raw binary file
+        with open(args.output_h, 'wb') as f:
+            f.write(bytearray(data))
+        print(f"Successfully wrote binary file {args.output_h}")
+        return
+    else:
+        # Generate C header file
+        header_content = generate_header_file(
+            data, width, height, var_name, args.input_png,
+            is_compressed=is_compressed,
+            uncompressed_size=uncompressed_size if is_compressed else None)
 
-    # Write to file
-    with open(args.output_h, 'w') as f:
-        f.write(header_content)
+        # Write to file
+        with open(args.output_h, 'w') as f:
+            f.write(header_content)
 
-    print(f"Successfully wrote {args.output_h}")
+        print(f"Successfully wrote {args.output_h}")
 
 
 if __name__ == '__main__':
