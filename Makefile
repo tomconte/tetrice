@@ -1,5 +1,5 @@
 # Cross-platform commands
-UNAME_S := $(shell uname -s 2>nul || echo Windows)
+UNAME_S := $(shell uname -s 2>NUL || echo Windows)
 
 ifneq (,$(findstring CYGWIN,$(UNAME_S)))
     RM = rm -f
