@@ -3,3 +3,6 @@ tetrice
 *.wav
 *.o
 *_temp.s
+.vscode/
+.claude/
+CLAUDE.md
