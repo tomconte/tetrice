@@ -420,14 +420,12 @@ void gameloop()
         }
         else
         {
-            // Anti-bounce checks (reduced for optimized game loop)
+            // Anti-bounce checks (platform-specific timing)
             // If the same input is pressed, ignore it for a number of iterations
-            #define LATERAL_SKIP 20
-            #define ROTATION_SKIP 35
             if (input == prev_input)
             {
-                if (((input == INPUT_MOVE_LEFT || input == INPUT_MOVE_RIGHT) && bounce > LATERAL_SKIP) || 
-                    ((input == INPUT_ROTATE_CW || input == INPUT_ROTATE_CCW) && bounce > ROTATION_SKIP))
+                if (((input == INPUT_MOVE_LEFT || input == INPUT_MOVE_RIGHT) && bounce > INPUT_LATERAL_SKIP) ||
+                    ((input == INPUT_ROTATE_CW || input == INPUT_ROTATE_CCW) && bounce > INPUT_ROTATION_SKIP))
                     bounce = 0;
                 else
                 {
