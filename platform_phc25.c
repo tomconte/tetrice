@@ -4,6 +4,20 @@
 #include "game_state.h"
 #include "game_font.h"
 
+/* Tetromino data structures - external declarations to avoid duplicate definitions */
+typedef uint8_t packed_tetromino[4];
+extern packed_tetromino all_tetrominos[];
+extern uint8_t tetromino_offsets[];
+extern uint8_t tetrominos_nb_shapes[];
+
+/* Bit manipulation macros for packed format */
+#define GET_BLOCK_X(block) ((block) & 0x03)
+#define GET_BLOCK_Y(block) (((block) >> 2) & 0x03)
+#define GET_BLOCK_SIDES(block) (((block) >> 4) & 0x07)
+
+/* Macro to access a specific tetromino rotation */
+#define GET_TETROMINO(piece, rotation) (&all_tetrominos[tetromino_offsets[piece] + (rotation)])
+
 extern void decompress_ui_left(void);
 extern void decompress_ui_right(void);
 extern void decompress_ui_title(void);
@@ -86,21 +100,13 @@ void clear_screen(void)
 }
 
 
-/* Draw a tetris block with pattern based on color */
-void draw_tetris_block_pattern(uint8_t block_x, uint8_t block_y, uint8_t color)
+/* Draw a tetris block with pattern based on color at pixel coordinates */
+void draw_tetris_block_pattern(uint8_t pixel_x, uint8_t pixel_y, uint8_t color)
 {
     uint16_t start_addr;
-    uint8_t pixel_x, pixel_y;
     uint8_t row;
 
     if (color == 0 || color > 7) return; /* Invalid color */
-
-    /* Calculate starting pixel position */
-    pixel_x = PLAYFIELD_START_X + (block_x << 3);  /* block_x * 8 */
-    pixel_y = PLAYFIELD_START_Y + (block_y << 3);  /* block_y * 8 */
-
-    /* Bounds check */
-    if (block_x >= PLAYFIELD_WIDTH || block_y >= PLAYFIELD_HEIGHT) return;
 
     /* Draw 8x8 block using pattern */
     for (row = 0; row < BLOCK_SIZE; row++) {
@@ -110,19 +116,11 @@ void draw_tetris_block_pattern(uint8_t block_x, uint8_t block_y, uint8_t color)
     }
 }
 
-/* Erase a tetris block (set to background) */
-void erase_tetris_block(uint8_t block_x, uint8_t block_y)
+/* Erase a tetris block (set to background) at pixel coordinates */
+void erase_tetris_block(uint8_t pixel_x, uint8_t pixel_y)
 {
     uint16_t start_addr;
-    uint8_t pixel_x, pixel_y;
     uint8_t row;
-
-    /* Calculate starting pixel position */
-    pixel_x = PLAYFIELD_START_X + (block_x << 3);  /* block_x * 8 */
-    pixel_y = PLAYFIELD_START_Y + (block_y << 3);  /* block_y * 8 */
-
-    /* Bounds check */
-    if (block_x >= PLAYFIELD_WIDTH || block_y >= PLAYFIELD_HEIGHT) return;
 
     /* Erase 8x8 block */
     for (row = 0; row < BLOCK_SIZE; row++) {
@@ -309,6 +307,7 @@ input_action_t platform_get_input()
 void display_sync_playfield(game_state_t* state)
 {
     uint8_t x, y, cell_data, cell_content;
+    uint8_t pixel_x, pixel_y;
 
     for (y = 0; y < PLAYFIELD_HEIGHT; y++) {
         for (x = 0; x < PLAYFIELD_WIDTH; x++) {
@@ -318,12 +317,16 @@ void display_sync_playfield(game_state_t* state)
             if (GET_CELL_DIRTY(cell_data)) {
                 cell_content = GET_CELL_CONTENT(cell_data);
 
+                /* Convert playfield coordinates to pixel coordinates */
+                pixel_x = PLAYFIELD_START_X + (x << 3);
+                pixel_y = PLAYFIELD_START_Y + (y << 3);
+
                 if (cell_content != CELL_EMPTY) {
                     /* Draw block with pattern based on piece color */
-                    draw_tetris_block_pattern(x, y, cell_content);
+                    draw_tetris_block_pattern(pixel_x, pixel_y, cell_content);
                 } else {
                     /* Erase block */
-                    erase_tetris_block(x, y);
+                    erase_tetris_block(pixel_x, pixel_y);
                 }
 
                 /* Clear dirty flag after redraw */
@@ -340,6 +343,31 @@ void display_sync_ui(game_state_t* state)
 
     /* Display level at (216, 174) - 3 digits with leading zeros */
     draw_number(216, 174, state->level, 3, 1);
+}
+
+#define PREVIEW_X 202
+#define PREVIEW_Y 80
+
+void display_preview_piece(uint8_t piece)
+{
+    packed_tetromino *tetromino;
+    uint8_t i, px, py;
+
+    /* Clear preview area (4x4 blocks = 32x32 pixels) */
+    for (py = 0; py < 4; py++) {
+        for (px = 0; px < 4; px++) {
+            erase_tetris_block(PREVIEW_X + (px << 3), PREVIEW_Y + (py << 3));
+        }
+    }
+
+    /* Draw the piece (rotation 0) */
+    tetromino = GET_TETROMINO(piece, 0);
+
+    for (i = 0; i < 4; i++) {
+        px = GET_BLOCK_X((*tetromino)[i]);
+        py = GET_BLOCK_Y((*tetromino)[i]);
+        draw_tetris_block_pattern(PREVIEW_X + (px << 3), PREVIEW_Y + (py << 3), piece + 1);
+    }
 }
 
 void display_clear_screen()

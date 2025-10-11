@@ -3,6 +3,20 @@
 #ifdef ALICE
 #include "game_state.h"
 
+/* Tetromino data structures - external declarations to avoid duplicate definitions */
+typedef uint8_t packed_tetromino[4];
+extern packed_tetromino all_tetrominos[];
+extern uint8_t tetromino_offsets[];
+extern uint8_t tetrominos_nb_shapes[];
+
+/* Bit manipulation macros for packed format */
+#define GET_BLOCK_X(block) ((block) & 0x03)
+#define GET_BLOCK_Y(block) (((block) >> 2) & 0x03)
+#define GET_BLOCK_SIDES(block) (((block) >> 4) & 0x07)
+
+/* Macro to access a specific tetromino rotation */
+#define GET_TETROMINO(piece, rotation) (&all_tetrominos[tetromino_offsets[piece] + (rotation)])
+
 // Colors for each tetromino - Alice specific mapping
 char tetrominos_colors[] = {
     yellow, cyan, pink, green, red, blue, orange};
@@ -294,6 +308,32 @@ void display_sync_ui(game_state_t* state)
     prints(UI_START_X, 6, print_str);
 }
 
+void display_preview_piece(uint8_t piece)
+{
+    packed_tetromino *tetromino;
+    uint8_t i, px, py;
+    uint8_t preview_x = UI_START_X;
+    uint8_t preview_y = 9;
+
+    // Clear preview area (4x4 grid)
+    color(black, black);
+    for (py = 0; py < 4; py++) {
+        for (px = 0; px < 4; px++) {
+            printc(preview_x + px, preview_y + py, ' ');
+        }
+    }
+
+    // Draw the piece (rotation 0)
+    tetromino = GET_TETROMINO(piece, 0);
+    color(tetrominos_colors[piece], black);
+
+    for (i = 0; i < 4; i++) {
+        px = GET_BLOCK_X((*tetromino)[i]);
+        py = GET_BLOCK_Y((*tetromino)[i]);
+        printc(preview_x + px, preview_y + py, '\x7F');
+    }
+}
+
 void display_clear_screen()
 {
     unsigned char x, y;
@@ -342,6 +382,7 @@ void display_draw_borders()
     color(white, black);
     prints(UI_START_X, 2, "SCORE");
     prints(UI_START_X, 5, "LEVEL");
+    prints(UI_START_X, 8, "NEXT");
 
     // Welcome message and wait to start game
     // color(white, black);

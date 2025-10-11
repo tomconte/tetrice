@@ -44,6 +44,7 @@ typedef struct game_state_t {
     uint8_t level;
     uint8_t speed;
     uint8_t piece;
+    uint8_t next_piece;
     uint8_t x, y;
     uint8_t rotation;
 } game_state_t;

@@ -38,6 +38,7 @@ input_action_t platform_get_input();
 /* Display functions */
 void display_sync_playfield(struct game_state_t* state);
 void display_sync_ui(struct game_state_t* state);
+void display_preview_piece(uint8_t piece);
 void display_clear_screen();
 void display_draw_borders();
 void display_game_over();

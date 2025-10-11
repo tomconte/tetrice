@@ -249,12 +249,13 @@ void init_game_state(game_state_t* state)
 {
     // Clear playfield
     playfield_clear(state);
-    
+
     // Initialize game variables
     state->score = 0;
     state->level = 1;
     state->speed = 15;
     state->piece = platform_random() % 7;
+    state->next_piece = platform_random() % 7;
     state->x = PIECE_START_X;
     state->y = PIECE_START_Y;
     state->rotation = 0;
@@ -305,6 +306,7 @@ void gameloop()
 
     // Initial display sync
     display_sync_ui(&state);
+    display_preview_piece(state.next_piece);
     display_sync_playfield(&state);
 
     #ifdef PHC25
@@ -378,8 +380,12 @@ void gameloop()
                 py = state.y;
                 protation = state.rotation;
 
-                // Select a random piece
-                state.piece = platform_random() % 7;
+                // Use next piece and generate new next piece
+                state.piece = state.next_piece;
+                state.next_piece = platform_random() % 7;
+
+                // Update preview display with new next piece
+                display_preview_piece(state.next_piece);
 
                 // Set initial timer
                 timeout_ticks = state.speed;
