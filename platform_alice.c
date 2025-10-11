@@ -3,6 +3,20 @@
 #ifdef ALICE
 #include "game_state.h"
 
+/* Tetromino data structures - external declarations to avoid duplicate definitions */
+typedef uint8_t packed_tetromino[4];
+extern packed_tetromino all_tetrominos[];
+extern uint8_t tetromino_offsets[];
+extern uint8_t tetrominos_nb_shapes[];
+
+/* Bit manipulation macros for packed format */
+#define GET_BLOCK_X(block) ((block) & 0x03)
+#define GET_BLOCK_Y(block) (((block) >> 2) & 0x03)
+#define GET_BLOCK_SIDES(block) (((block) >> 4) & 0x07)
+
+/* Macro to access a specific tetromino rotation */
+#define GET_TETROMINO(piece, rotation) (&all_tetrominos[tetromino_offsets[piece] + (rotation)])
+
 // Colors for each tetromino - Alice specific mapping
 char tetrominos_colors[] = {
     yellow, cyan, pink, green, red, blue, orange};
@@ -23,8 +37,10 @@ uint8_t keys_per_column[8][8] = {
 uint8_t all_key_columns[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
 
 /************************************************************/
-/* Display functions for Alice 32/90                        */
+/* Internal platform functions                              */
 /************************************************************/
+
+/* Low-level graphics primitives for internal use by platform layer */
 
 void posxy(unsigned char column, unsigned char line)
 {
@@ -93,20 +109,6 @@ void printcg(unsigned char x, unsigned char y, unsigned char c)
     POKE(R2, 0x20);
     POKE(R0EXEC, 1);
     BUSY();
-}
-
-uint8_t charatxy(uint8_t column, uint8_t line)
-{
-    if (line > 0)
-        line += 7;
-
-    POKE(R6, line);
-    POKE(R7, column);
-
-    POKE(R0EXEC, 8);
-    BUSY();
-
-    return PEEK(R1);
 }
 
 /************************************************************/
@@ -282,20 +284,54 @@ void display_sync_playfield(game_state_t* state)
 }
 
 
+/* Convert int to a three char string with leading zeros */
+void int_to_string(uint8_t score, char *str)
+{
+    str[0] = '0' + (score / 100);
+    str[1] = '0' + ((score % 100) / 10);
+    str[2] = '0' + (score % 10);
+    str[3] = '\0';
+}
+
 void display_sync_ui(game_state_t* state)
 {
     char print_str[4];
-    extern void int_to_string(uint8_t score, char *str);
-    
+
     color(white, black);
-    
+
     // Display score
     int_to_string(state->score, print_str);
     prints(UI_START_X, 3, print_str);
-    
+
     // Display level
     int_to_string(state->level, print_str);
     prints(UI_START_X, 6, print_str);
+}
+
+void display_preview_piece(uint8_t piece)
+{
+    packed_tetromino *tetromino;
+    uint8_t i, px, py;
+    uint8_t preview_x = UI_START_X;
+    uint8_t preview_y = 9;
+
+    // Clear preview area (4x4 grid)
+    color(black, black);
+    for (py = 0; py < 4; py++) {
+        for (px = 0; px < 4; px++) {
+            printc(preview_x + px, preview_y + py, ' ');
+        }
+    }
+
+    // Draw the piece (rotation 0)
+    tetromino = GET_TETROMINO(piece, 0);
+    color(tetrominos_colors[piece], black);
+
+    for (i = 0; i < 4; i++) {
+        px = GET_BLOCK_X((*tetromino)[i]);
+        py = GET_BLOCK_Y((*tetromino)[i]);
+        printc(preview_x + px, preview_y + py, '\x7F');
+    }
 }
 
 void display_clear_screen()
@@ -314,7 +350,7 @@ void display_clear_screen()
 void display_draw_borders()
 {
     unsigned char y;
-    
+
     // Print title
     color(yellow, black);
     prints(9, 0, "Tetris + Alice = TETRICE");
@@ -346,6 +382,17 @@ void display_draw_borders()
     color(white, black);
     prints(UI_START_X, 2, "SCORE");
     prints(UI_START_X, 5, "LEVEL");
+    prints(UI_START_X, 8, "NEXT");
+
+    // Welcome message and wait to start game
+    // color(white, black);
+    // prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
+}
+
+void display_game_over()
+{
+    color(white, black);
+    prints(PLAYFIELD_START_X+1, 10, "GAME  OVER");
 }
 
 #endif // ALICE

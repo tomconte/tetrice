@@ -10,20 +10,15 @@
 #include "phc25.h"
 #endif
 
-void posxy(unsigned char column, unsigned char line);
-void color(unsigned char foreground, unsigned char background);
-void prints(unsigned char x, unsigned char y, unsigned char *text);
-void printsg(unsigned char x, unsigned char y, unsigned char *text);
-void printc(unsigned char x, unsigned char y, unsigned char c);
-void printcg(unsigned char x, unsigned char y, unsigned char c);
-uint8_t charatxy(uint8_t column, uint8_t line);
+/* Forward declaration for game_state_t */
+struct game_state_t;
 
-uint8_t scankey();
+/* Timing functions */
 void sleep(uint8_t seconds);
 void ticks(uint8_t ticks);
 
+/* Input functions */
 extern uint8_t timeout_ticks;
-uint8_t wait();
 uint8_t wait_key();
 
 uint8_t platform_random();
@@ -39,5 +34,17 @@ typedef enum {
 } input_action_t;
 
 input_action_t platform_get_input();
+
+/* Display functions */
+void display_sync_playfield(struct game_state_t* state);
+void display_sync_ui(struct game_state_t* state);
+void display_preview_piece(uint8_t piece);
+void display_clear_screen();
+void display_draw_borders();
+void display_game_over();
+
+/* Internal platform functions (used by platform implementations) */
+uint8_t scankey();
+uint8_t wait();
 
 #endif // PLATFORM_H

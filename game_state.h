@@ -38,20 +38,15 @@
     ((cell) = ((content) & CELL_CONTENT_MASK) | CELL_DIRTY_FLAG)
 
 // Game state structure
-typedef struct {
+typedef struct game_state_t {
     uint8_t playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
     uint8_t score;
     uint8_t level;
     uint8_t speed;
     uint8_t piece;
+    uint8_t next_piece;
     uint8_t x, y;
     uint8_t rotation;
 } game_state_t;
-
-/* Display Sync API - declared here since they need the complete game_state_t definition */
-void display_sync_playfield(game_state_t* state);
-void display_sync_ui(game_state_t* state);
-void display_clear_screen();
-void display_draw_borders();
 
 #endif // GAME_STATE_H

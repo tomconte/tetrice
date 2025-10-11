@@ -12,6 +12,7 @@ uint8_t playfield_is_empty_cell(game_state_t* state, uint8_t x, uint8_t y);
 void playfield_clear(game_state_t* state);
 void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
 void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned char x, unsigned char y, unsigned char rotation);
+uint8_t check_collision(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t side_flag, int8_t dx, int8_t dy);
 uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
 uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
 uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation);
@@ -39,11 +40,11 @@ void playfield_place_piece(game_state_t* state, unsigned char piece, unsigned ch
     packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     unsigned char i;
     unsigned char px, py;
-    
+
     for (i = 0; i < 4; i++)
     {
-        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
+        px = x + GET_BLOCK_X((*tetromino)[i]);
+        py = y + GET_BLOCK_Y((*tetromino)[i]);
         playfield_set_cell(state, px, py, CELL_PIECE_1 + piece);
     }
 }
@@ -55,18 +56,18 @@ void playfield_remove_piece(game_state_t* state, unsigned char piece, unsigned c
     packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     unsigned char i;
     unsigned char px, py;
-    
+
     for (i = 0; i < 4; i++)
     {
-        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
+        px = x + GET_BLOCK_X((*tetromino)[i]);
+        py = y + GET_BLOCK_Y((*tetromino)[i]);
         playfield_set_cell(state, px, py, CELL_EMPTY);
     }
 }
 
 
-// Detect collision left
-uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+// Generic collision detection function
+uint8_t check_collision(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation, uint8_t side_flag, int8_t dx, int8_t dy)
 {
     packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
     uint8_t i;
@@ -74,61 +75,35 @@ uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
 
     for (i = 0; i < 4; i++)
     {
-        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_LEFT)
+        if (GET_BLOCK_SIDES((*tetromino)[i]) & side_flag)
         {
-            px = x + GET_BLOCK_X((*tetromino)[i]) - 1 - PLAYFIELD_START_X;
-            py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
-            
-            if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
+            px = x + GET_BLOCK_X((*tetromino)[i]) + dx;
+            py = y + GET_BLOCK_Y((*tetromino)[i]) + dy;
+
+            if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
                 return 1;
         }
     }
 
     return 0;
+}
+
+// Detect collision left
+uint8_t collision_left(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
+{
+    return check_collision(state, piece, x, y, rotation, SIDE_LEFT, -1, 0);
 }
 
 // Detect collision right
 uint8_t collision_right(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
-    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
-    uint8_t i;
-    uint8_t px, py;
-
-    for (i = 0; i < 4; i++)
-    {
-        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_RIGHT)
-        {
-            px = x + GET_BLOCK_X((*tetromino)[i]) + 1 - PLAYFIELD_START_X;
-            py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
-            
-            if (px >= PLAYFIELD_WIDTH || !playfield_is_empty_cell(state, px, py))
-                return 1;
-        }
-    }
-
-    return 0;
+    return check_collision(state, piece, x, y, rotation, SIDE_RIGHT, 1, 0);
 }
 
 // Detect collision bottom
 uint8_t collision_bottom(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y, uint8_t rotation)
 {
-    packed_tetromino *tetromino = GET_TETROMINO(piece, rotation);
-    uint8_t i;
-    uint8_t px, py;
-
-    for (i = 0; i < 4; i++)
-    {
-        if (GET_BLOCK_SIDES((*tetromino)[i]) & SIDE_BOTTOM)
-        {
-            px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-            py = y + GET_BLOCK_Y((*tetromino)[i]) + 1 - PLAYFIELD_START_Y;
-            
-            if (py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
-                return 1;
-        }
-    }
-
-    return 0;
+    return check_collision(state, piece, x, y, rotation, SIDE_BOTTOM, 0, 1);
 }
 
 // Check if a piece can rotate by checking collisions
@@ -142,29 +117,20 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
     // Remove piece from playfield
     playfield_remove_piece(state, piece, x, y, rotation);
 
-    // Rotate piece
-    if (direction == 0)
+    // Rotate piece - calculate new rotation based on direction
     {
-        if (rotation < tetrominos_nb_shapes[piece] - 1)
-            new_rotation = rotation + 1;
-        else
-            new_rotation = 0;
-    }
-    else
-    {
-        if (rotation > 0)
-            new_rotation = rotation - 1;
-        else
-            new_rotation = tetrominos_nb_shapes[piece] - 1;
+        uint8_t max = tetrominos_nb_shapes[piece];
+        new_rotation = direction ? ((rotation > 0) ? rotation - 1 : max - 1)
+                                 : ((rotation + 1 < max) ? rotation + 1 : 0);
     }
 
     // Check collision
     tetromino = GET_TETROMINO(piece, new_rotation);
     for (i = 0; i < 4; i++)
     {
-        px = x + GET_BLOCK_X((*tetromino)[i]) - PLAYFIELD_START_X;
-        py = y + GET_BLOCK_Y((*tetromino)[i]) - PLAYFIELD_START_Y;
-        
+        px = x + GET_BLOCK_X((*tetromino)[i]);
+        py = y + GET_BLOCK_Y((*tetromino)[i]);
+
         if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
         {
             // Collision - restore piece in playfield
@@ -243,15 +209,6 @@ uint8_t check_full_lines(game_state_t* state)
     }
 }
 
-// Convert int to a three char string with leading zeros
-void int_to_string(uint8_t score, char *str)
-{
-    str[0] = '0' + (score / 100);
-    str[1] = '0' + ((score % 100) / 10);
-    str[2] = '0' + (score % 10);
-    str[3] = '\0';
-}
-
 /************************************************************/
 /* Playfield Operations API                                 */
 /************************************************************/
@@ -292,12 +249,13 @@ void init_game_state(game_state_t* state)
 {
     // Clear playfield
     playfield_clear(state);
-    
+
     // Initialize game variables
     state->score = 0;
     state->level = 1;
     state->speed = 15;
     state->piece = platform_random() % 7;
+    state->next_piece = platform_random() % 7;
     state->x = PIECE_START_X;
     state->y = PIECE_START_Y;
     state->rotation = 0;
@@ -316,13 +274,21 @@ void gameloop()
     input_action_t input;
     input_action_t prev_input;
     unsigned char bounce;
-    
+
+    #ifdef PHC25
+    //debug_print(10, 20, "INIT");
+    #endif
+
     // Initialize game state
     init_game_state(&state);
-    
+
+    #ifdef PHC25
+    //debug_print(10, 25, "PLACE");
+    #endif
+
     // Place initial piece in playfield
     playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
-    
+
     // Initialize other variables
     px = state.x;
     py = state.y;
@@ -334,9 +300,18 @@ void gameloop()
     // Set initial timer
     timeout_ticks = state.speed;
 
+    #ifdef PHC25
+    //debug_print(10, 30, "SYNC");
+    #endif
+
     // Initial display sync
     display_sync_ui(&state);
+    display_preview_piece(state.next_piece);
     display_sync_playfield(&state);
+
+    #ifdef PHC25
+    //debug_print(10, 35, "LOOP");
+    #endif
 
     // Loop until game over
     while (1)
@@ -349,8 +324,16 @@ void gameloop()
         // Remove piece from playfield before any movement checks
         playfield_remove_piece(&state, state.piece, state.x, state.y, state.rotation);
 
+        #ifdef PHC25
+        //debug_print(10, 40, "INPUT");
+        #endif
+
         // Get input action
         input = platform_get_input();
+
+        #ifdef PHC25
+        //debug_print_hex(50, 40, (uint8_t)input);
+        #endif
 
         // Piece falls
         if (input == INPUT_TIMEOUT || input == INPUT_DROP)
@@ -397,8 +380,12 @@ void gameloop()
                 py = state.y;
                 protation = state.rotation;
 
-                // Select a random piece
-                state.piece = platform_random() % 7;
+                // Use next piece and generate new next piece
+                state.piece = state.next_piece;
+                state.next_piece = platform_random() % 7;
+
+                // Update preview display with new next piece
+                display_preview_piece(state.next_piece);
 
                 // Set initial timer
                 timeout_ticks = state.speed;
@@ -406,9 +393,12 @@ void gameloop()
                 // Check for game over (before placing new piece)
                 if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
                 {
+                    #ifdef PHC25
+                    //debug_print(10, 45, "OVER");
+                    #endif
+
                     // Game over
-                    color(white, black);
-                    prints(PLAYFIELD_START_X+1, 10, "GAME  OVER");
+                    display_game_over();
                     ticks(15);
                     // Wait for key
                     wait_key();
@@ -430,14 +420,12 @@ void gameloop()
         }
         else
         {
-            // Anti-bounce checks (reduced for optimized game loop)
+            // Anti-bounce checks (platform-specific timing)
             // If the same input is pressed, ignore it for a number of iterations
-            #define LATERAL_SKIP 20
-            #define ROTATION_SKIP 35
             if (input == prev_input)
             {
-                if (((input == INPUT_MOVE_LEFT || input == INPUT_MOVE_RIGHT) && bounce > LATERAL_SKIP) || 
-                    ((input == INPUT_ROTATE_CW || input == INPUT_ROTATE_CCW) && bounce > ROTATION_SKIP))
+                if (((input == INPUT_MOVE_LEFT || input == INPUT_MOVE_RIGHT) && bounce > INPUT_LATERAL_SKIP) ||
+                    ((input == INPUT_ROTATE_CW || input == INPUT_ROTATE_CCW) && bounce > INPUT_ROTATION_SKIP))
                     bounce = 0;
                 else
                 {
@@ -493,12 +481,18 @@ void main()
         display_clear_screen();
         display_draw_borders();
 
+        #ifdef ALICE
         // Welcome message and wait to start game
-        color(white, black);
-        prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
+        // color(white, black);
+        // prints(PLAYFIELD_START_X+1, 10, "PRESS  KEY");
+        #endif
+
         wait_key();
         ticks(5);
-        prints(PLAYFIELD_START_X+1, 10, "          ");
+
+        #ifdef ALICE
+        // prints(PLAYFIELD_START_X+1, 10, "          ");
+        #endif
 
         // Call game loop
         gameloop();
