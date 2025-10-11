@@ -283,13 +283,13 @@ input_action_t platform_get_input()
     uint8_t c = wait();
 
     switch (c) {
-        case 'A':
+        case 'O':
             return INPUT_MOVE_LEFT;      /* A key for left movement */
-        case 'D':
+        case 'P':
             return INPUT_MOVE_RIGHT;     /* D key for right movement */
-        case 'W':
+        case 'Q':
             return INPUT_ROTATE_CW;      /* W key for rotate clockwise */
-        case 'S':
+        case 'W':
             return INPUT_ROTATE_CCW;     /* S key for rotate counter-clockwise */
         case ' ':
             return INPUT_DROP;           /* Space for hard drop */
