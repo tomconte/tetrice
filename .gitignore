@@ -2,6 +2,9 @@ tetrice
 *.k7
 *.wav
 *.o
+*.bin
+*.map
+*.phc
 *_temp.s
 .vscode/
 .claude/
