@@ -324,16 +324,8 @@ void gameloop()
         // Remove piece from playfield before any movement checks
         playfield_remove_piece(&state, state.piece, state.x, state.y, state.rotation);
 
-        #ifdef PHC25
-        //debug_print(10, 40, "INPUT");
-        #endif
-
         // Get input action
         input = platform_get_input();
-
-        #ifdef PHC25
-        //debug_print_hex(50, 40, (uint8_t)input);
-        #endif
 
         // Piece falls
         if (input == INPUT_TIMEOUT || input == INPUT_DROP)
@@ -393,10 +385,6 @@ void gameloop()
                 // Check for game over (before placing new piece)
                 if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
                 {
-                    #ifdef PHC25
-                    //debug_print(10, 45, "OVER");
-                    #endif
-
                     // Game over
                     display_game_over();
                     ticks(15);
