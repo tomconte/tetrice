@@ -72,8 +72,8 @@
 #define PLAYFIELD_END_X (PLAYFIELD_START_X + PLAYFIELD_PIXEL_WIDTH - 1)
 
 /* Input anti-bounce settings (platform-specific timing) */
-#define INPUT_LATERAL_SKIP 10           /* Frames to skip for lateral movement (left/right) */
-#define INPUT_ROTATION_SKIP 20          /* Frames to skip for rotation (CW/CCW) */
+#define INPUT_LATERAL_SKIP 5           /* Frames to skip for lateral movement (left/right) */
+#define INPUT_ROTATION_SKIP 10          /* Frames to skip for rotation (CW/CCW) */
 
 /* I/O port access functions for Z80 */
 void out_port(uint8_t port, uint8_t value);

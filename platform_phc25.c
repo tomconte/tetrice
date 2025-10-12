@@ -238,17 +238,22 @@ uint8_t wait()
     /* Wait for keypress or timeout */
     uint8_t tick_count = 0;
     uint8_t key;
+    uint8_t scan_iterations;
 
     while (tick_count < timeout_ticks) {
-        key = scankey();
-        if (key != 0) {
-            timeout_ticks -= tick_count;
-            return key;
-        }
-
-        /* Simple delay */
+        /* Delay for one tick - this MUST happen before key checks */
+        /* to ensure timing always progresses */
         ticks(1);
         tick_count++;
+
+        /* Check keys multiple times for responsiveness */
+        for (scan_iterations = 0; scan_iterations < 5; scan_iterations++) {
+            key = scankey();
+            if (key != 0) {
+                timeout_ticks -= tick_count;
+                return key;
+            }
+        }
     }
 
     return 0;  /* Timeout */
