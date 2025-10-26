@@ -36,6 +36,22 @@ _decompress_ui_bottom:
         call dzx0_standard
         ret
 
+PUBLIC _decompress_splash
+
+_decompress_splash:
+        ld hl, splash
+        ld de, 0xe000
+        call dzx0_standard
+        ret
+
+PUBLIC _decompress_gameover
+
+_decompress_gameover:
+        ld hl, gameover
+        ld de, 0xe000
+        call dzx0_standard
+        ret
+
 ; -----------------------------------------------------------------------------
 ; ZX0 decoder by Einar Saukas & Urusergi
 ; "Standard" version (68 bytes only)
@@ -114,3 +130,9 @@ ui_title:
 
 ui_bottom:
         incbin "gfx/ui_bottom.bin.zx0"
+
+splash:
+        incbin "gfx/splash.bin.zx0"
+
+gameover:
+        incbin "gfx/gameover.bin.zx0"

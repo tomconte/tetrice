@@ -22,6 +22,8 @@ extern void decompress_ui_left(void);
 extern void decompress_ui_right(void);
 extern void decompress_ui_title(void);
 extern void decompress_ui_bottom(void);
+extern void decompress_splash(void);
+extern void decompress_gameover(void);
 
 /************************************************************/
 /* PHC-25 Mode 12 Graphics Implementation                   */
@@ -428,13 +430,16 @@ void display_draw_borders()
     /* Draw bottom decoration (centered at bottom) - zx0 compressed */
     decompress_ui_bottom();
     copy_bitmap(88, 184, VRAM2_START, GFX_BOTTOM_HEIGHT, GFX_BOTTOM_BYTES_PER_ROW);
+
+    // Draw splash screen in the playfield area
+    decompress_splash();
+    copy_bitmap(88, 8, VRAM2_START, 176, 10);
 }
 
 void display_game_over()
 {
-    /* TODO: Implement bitmap font rendering for "GAME OVER" message */
-    /* For now, this is a placeholder - full implementation requires bitmap font */
-    /* The message should be displayed in the center of the playfield */
+    decompress_gameover();
+    copy_bitmap(88, 80, VRAM2_START, 40, 10);
 }
 
 #endif // PHC25
