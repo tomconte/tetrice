@@ -1,22 +1,49 @@
-; Minimal CRT0 for PHC25 Tetris using z88dk
-; Based on successful POC implementation
+; Minimal CRT0 for PHC25 Tetris using z88dk with XOR decoder
+
+        ; Set origin to start of Program Work Area
+        org     $C009
+
+; ================================================================
+; XOR Decoder Stub - THIS SECTION MUST NOT BE ENCODED!
+; ================================================================
+
+        SECTION code_decoder
+
+decoder_start:
+        LD      D, XOR_MASK_VALUE       ; Mask in D
+        LD      HL, encoded_start       ; Start of encoded region
+        LD      BC, ENCODED_LENGTH      ; Length to decode
+
+decode_loop:
+        LD      A, B                    ; Check if done
+        OR      C
+        JR      Z, start                ; Jump to program start when done
+        
+        LD      A, (HL)                 ; Load byte
+        XOR     D                       ; Decode
+        LD      (HL), A                 ; Store back
+        
+        INC     HL                      ; Next byte
+        DEC     BC
+        JR      decode_loop
+
+; Configuration
+XOR_MASK_VALUE  EQU     0x03            ; Set to actual mask after encoding
+ENCODED_LENGTH  EQU     0x1EDF          ; Set to actual length after encoding
+
+; ================================================================
+; Main program code - THIS GETS ENCODED
+; ================================================================
 
         SECTION code_compiler
 
-        ; Set origin to start of Program Work Area
-        ; PHC-25 has Program Work Area at $C000-$DFFF
-        org     $C009
+encoded_start:                          ; Mark where encoding begins
 
-        ; Entry point - jump to C main function
 start:
         call    _main
 
-        ; Infinite loop after main returns (prevent crash)
 halt_loop:
         jr      halt_loop
 
-        ; Export the start symbol
         PUBLIC  start
-
-        ; Import the main function from C code
         EXTERN  _main

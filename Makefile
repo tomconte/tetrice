@@ -78,11 +78,11 @@ tetrice_alice:
 else ifeq ($(TARGET),phc25)
 # PHC25 build process using z88dk
 tetrice.phc: tetrice_phc25
-	$(MV) tetrice_code_compiler.bin tetrice.bin
+	$(MV) tetrice tetrice.bin
 	$(BIN_TO_PHC) phetrice .\tetrice.bin .\tetrice.phc
 
 tetrice_phc25:
-	$(PHC25_ZCC) $(PHC25_TARGET) $(PHC25_FLAGS) -SO3 --opt-code-size -DNDEBUG -crt0=$(PHC25_CRT0) -m -o tetrice $(SRC) $(PHC25_PLATFORM_SRC)
+	$(PHC25_ZCC) $(PHC25_TARGET) $(PHC25_FLAGS) -O2 -crt0=$(PHC25_CRT0) -m -o tetrice $(SRC) $(PHC25_PLATFORM_SRC)
 
 phc25_gfx:
 # Convert PNG images to binary format for PHC25
@@ -101,7 +101,7 @@ $(error Unknown target: $(TARGET). Use 'alice' or 'phc25')
 endif
 
 clean:
-	$(RM) *.o *.s a.out a.out.k7 tetrice.k7 tetrice_temp.s tetrice.s platform_alice_temp.s platform_alice.s tetrice.c10 tetrice.bin tetrice.map tetrice_code_compiler.bin tetrice.phc tetrice
+	$(RM) *.o *.s *.sym a.out a.out.k7 tetrice.k7 tetrice_temp.s tetrice.s platform_alice_temp.s platform_alice.s tetrice.c10 tetrice.bin tetrice.map tetrice_code_compiler.bin tetrice.phc tetrice
 
 # Help target
 help:
