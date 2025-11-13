@@ -287,24 +287,66 @@ uint8_t platform_random()
 
 input_action_t platform_get_input()
 {
-    uint8_t c = wait();
+    uint8_t c;
+    static input_action_t prev_input = INPUT_NONE;
+    static uint8_t bounce = 0;
+    input_action_t current_action;
+
+    c = wait();
 
     switch (c) {
         case 'O':
-            return INPUT_MOVE_LEFT;      /* A key for left movement */
+            current_action = INPUT_MOVE_LEFT;
+            break;
         case 'P':
-            return INPUT_MOVE_RIGHT;     /* D key for right movement */
+            current_action = INPUT_MOVE_RIGHT;
+            break;
         case 'Q':
-            return INPUT_ROTATE_CW;      /* W key for rotate clockwise */
+            current_action = INPUT_ROTATE_CW;
+            break;
         case 'W':
-            return INPUT_ROTATE_CCW;     /* S key for rotate counter-clockwise */
+            current_action = INPUT_ROTATE_CCW;
+            break;
         case ' ':
-            return INPUT_DROP;           /* Space for hard drop */
+            current_action = INPUT_DROP;
+            break;
         case 0:
-            return INPUT_TIMEOUT;
+            current_action = INPUT_TIMEOUT;
+            break;
         default:
-            return INPUT_NONE;
+            current_action = INPUT_NONE;
+            break;
     }
+
+    // Anti-bounce and key repeat logic
+    if (current_action != INPUT_TIMEOUT && current_action != INPUT_NONE)
+    {
+        if (current_action == prev_input)
+        {
+            if (((current_action == INPUT_MOVE_LEFT || current_action == INPUT_MOVE_RIGHT) && bounce > INPUT_LATERAL_SKIP) ||
+                ((current_action == INPUT_ROTATE_CW || current_action == INPUT_ROTATE_CCW) && bounce > INPUT_ROTATION_SKIP) ||
+                (current_action == INPUT_DROP))
+            {
+                bounce = 0; // Allow action to be repeated
+            }
+            else
+            {
+                bounce++;
+                current_action = INPUT_NONE; // Ignore this input
+            }
+        }
+        else
+        {
+            prev_input = current_action;
+            bounce = 0;
+        }
+    } else {
+        // Reset if no key is pressed or timeout occurs
+        prev_input = INPUT_NONE;
+        bounce = 0;
+    }
+
+    return current_action;
 }
 
 /************************************************************/

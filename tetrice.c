@@ -114,9 +114,6 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
     uint8_t i;
     uint8_t px, py;
 
-    // Remove piece from playfield
-    playfield_remove_piece(state, piece, x, y, rotation);
-
     // Rotate piece - calculate new rotation based on direction
     {
         uint8_t max = tetrominos_nb_shapes[piece];
@@ -133,8 +130,7 @@ uint8_t check_rotation(game_state_t* state, uint8_t piece, uint8_t x, uint8_t y,
 
         if (px >= PLAYFIELD_WIDTH || py >= PLAYFIELD_HEIGHT || !playfield_is_empty_cell(state, px, py))
         {
-            // Collision - restore piece in playfield
-            playfield_place_piece(state, piece, x, y, rotation);
+            // Collision detected, return original rotation
             return rotation;
         }
     }
@@ -272,8 +268,6 @@ void gameloop()
     unsigned char px, py, protation;
     unsigned char line_score;
     input_action_t input;
-    input_action_t prev_input;
-    unsigned char bounce;
 
     #ifdef PHC25
     //debug_print(10, 20, "INIT");
@@ -294,8 +288,6 @@ void gameloop()
     py = state.y;
     protation = 0;
     line_score = 0;
-    prev_input = INPUT_NONE;
-    bounce = 0;
 
     // Set initial timer
     timeout_ticks = state.speed;
@@ -327,16 +319,45 @@ void gameloop()
         // Get input action
         input = platform_get_input();
 
-        // Piece falls
-        if (input == INPUT_TIMEOUT || input == INPUT_DROP)
+        // Handle player input first (movement and rotation)
+        if (input != INPUT_TIMEOUT && input != INPUT_NONE)
         {
-            // No fall in the first lines
-            if (input == INPUT_DROP && state.y < 3) {
-                // Restore piece and continue
-                playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
-                continue;
+            // Process the valid player input
+            switch (input)
+            {
+            case INPUT_MOVE_LEFT:
+                if (collision_left(&state, state.piece, state.x, state.y, state.rotation) == 0)
+                    state.x--;
+                break;
+            case INPUT_MOVE_RIGHT:
+                if (collision_right(&state, state.piece, state.x, state.y, state.rotation) == 0)
+                    state.x++;
+                break;
+            case INPUT_ROTATE_CW:
+                state.rotation = check_rotation(&state, state.piece, state.x, state.y, state.rotation, 0);
+                break;
+            case INPUT_ROTATE_CCW:
+                state.rotation = check_rotation(&state, state.piece, state.x, state.y, state.rotation, 1);
+                break;
+            case INPUT_DROP:
+                // No fall in the first lines
+                if (state.y < 3) {
+                    input = INPUT_NONE; // Cancel drop
+                }
+                break;
+            default:
+                break;
             }
 
+            // A player action resets the gravity timer
+            // if (input != INPUT_NONE && input != INPUT_DROP) {
+            //     timeout_ticks = state.speed;
+            // }
+        }
+
+        // Now, handle gravity (timeout) or a drop action
+        if (input == INPUT_TIMEOUT || input == INPUT_DROP)
+        {
             // Piece has reached the bottom or another piece
             if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
             {
@@ -347,8 +368,6 @@ void gameloop()
                 if (line_score > 0)
                 {
                     // Accelerate speed every 10 points
-                    // The score can increase by more than 1 point
-                    // so we need to check if the score passed a multiple of 10
                     if ((state.score / 10) != ((state.score + line_score) / 10))
                     {
                         state.level++;
@@ -364,13 +383,10 @@ void gameloop()
                     display_sync_ui(&state);
                 }
 
-                // Reset position
+                // Reset position for new piece
                 state.x = PIECE_START_X;
                 state.y = PIECE_START_Y;
                 state.rotation = 0;
-                px = state.x;
-                py = state.y;
-                protation = state.rotation;
 
                 // Use next piece and generate new next piece
                 state.piece = state.next_piece;
@@ -379,77 +395,25 @@ void gameloop()
                 // Update preview display with new next piece
                 display_preview_piece(state.next_piece);
 
-                // Set initial timer
-                timeout_ticks = state.speed;
-
                 // Check for game over (before placing new piece)
                 if (collision_bottom(&state, state.piece, state.x, state.y, state.rotation))
                 {
                     // Game over
                     display_game_over();
-                    ticks(15);
-                    // Wait for key
+                    ticks(30);
                     wait_key();
-                    ticks(5);
+                    ticks(10);
                     return;
                 }
-
-                // Place new piece in playfield
-                playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
-
-                // Continue loop
-                continue;
+            } else {
+                // Move piece down
+                state.y++;
             }
-            // Move piece down
-            state.y++;
+            // Reset gravity timer after a fall
             timeout_ticks = state.speed;
-            // Place piece in new position
-            playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
-        }
-        else
-        {
-            // Anti-bounce checks (platform-specific timing)
-            // If the same input is pressed, ignore it for a number of iterations
-            if (input == prev_input)
-            {
-                if (((input == INPUT_MOVE_LEFT || input == INPUT_MOVE_RIGHT) && bounce > INPUT_LATERAL_SKIP) ||
-                    ((input == INPUT_ROTATE_CW || input == INPUT_ROTATE_CCW) && bounce > INPUT_ROTATION_SKIP))
-                    bounce = 0;
-                else
-                {
-                    bounce++;
-                    continue;
-                }
-            }
-            else
-            {
-                prev_input = input;
-                bounce = 0;
-            }
         }
 
-        // Move piece
-        switch (input)
-        {
-        case INPUT_MOVE_LEFT:
-            if (collision_left(&state, state.piece, state.x, state.y, state.rotation) == 0)
-                state.x--;
-            break;
-        case INPUT_MOVE_RIGHT:
-            if (collision_right(&state, state.piece, state.x, state.y, state.rotation) == 0)
-                state.x++;
-            break;
-        case INPUT_ROTATE_CW:
-            state.rotation = check_rotation(&state, state.piece, state.x, state.y, state.rotation, 0);
-            break;
-        case INPUT_ROTATE_CCW:
-            state.rotation = check_rotation(&state, state.piece, state.x, state.y, state.rotation, 1);
-            break;
-        default:
-            break;
-        }
-
-        // Place piece in new position after movement
+        // Place piece in new position after all movements
         playfield_place_piece(&state, state.piece, state.x, state.y, state.rotation);
 
         // Sync entire display (includes the piece)
