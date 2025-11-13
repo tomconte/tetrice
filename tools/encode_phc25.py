@@ -40,7 +40,7 @@ def encode_phc25_binary(input_file, output_file):
 
     # The decoder stub is about 20-25 bytes
     # We'll skip the first bytes
-    DECODER_SIZE = 19
+    DECODER_SIZE = 20
 
     if len(data) <= DECODER_SIZE:
         print("ERROR: File too small!")
