@@ -9,6 +9,8 @@
 
         SECTION code_decoder
 
+        DI                              ; Disable interrupts
+
 decoder_start:
         LD      D, XOR_MASK_VALUE       ; Mask in D
         LD      HL, encoded_start       ; Start of encoded region
@@ -29,7 +31,7 @@ decode_loop:
 
 ; Configuration
 XOR_MASK_VALUE  EQU     0x03            ; Set to actual mask after encoding
-ENCODED_LENGTH  EQU     0x1EDF          ; Set to actual length after encoding
+ENCODED_LENGTH  EQU     7710            ; Set to actual length after encoding
 
 ; ================================================================
 ; Main program code - THIS GETS ENCODED
