@@ -130,11 +130,11 @@ packed_tetromino all_tetrominos[] = {
         PACK_BLOCK(1, 2, SIDE_LEFT | SIDE_RIGHT | SIDE_BOTTOM),
         PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_BOTTOM)
     },
-    { 
+    {
         PACK_BLOCK(0, 1, SIDE_LEFT | SIDE_BOTTOM),
         PACK_BLOCK(1, 1, SIDE_BOTTOM),
         PACK_BLOCK(2, 1, SIDE_RIGHT | SIDE_BOTTOM),
-        PACK_BLOCK(2, 0, SIDE_RIGHT)
+        PACK_BLOCK(2, 0, SIDE_RIGHT | SIDE_LEFT)
     },
     { 
         PACK_BLOCK(0, 0, SIDE_LEFT | SIDE_RIGHT),
