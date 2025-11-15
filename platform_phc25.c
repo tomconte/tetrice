@@ -229,7 +229,7 @@ void ticks(uint8_t ticks)
     /* Simple delay implementation */
     uint16_t i, j;
     for (i = 0; i < ticks; i++) {
-        for (j = 0; j < 300; j++) {
+        for (j = 0; j < 1000; j++) {
             /* Busy wait loop */
         }
     }

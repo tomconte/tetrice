@@ -348,11 +348,6 @@ void gameloop()
             default:
                 break;
             }
-
-            // A player action resets the gravity timer
-            // if (input != INPUT_NONE && input != INPUT_DROP) {
-            //     timeout_ticks = state.speed;
-            // }
         }
 
         // Now, handle gravity (timeout) or a drop action
